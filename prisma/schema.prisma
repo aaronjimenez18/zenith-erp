@@ -1,0 +1,78 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  VENDEDOR
+}
+
+model Business {
+  id        String    @id @default(cuid())
+  name      String
+  users     User[]
+  products  Product[]
+  sales     Sale[]
+  expenses  Expense[]
+  createdAt DateTime  @default(now())
+}
+
+model User {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  password   String
+  role       Role     @default(ADMIN)
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id])
+}
+
+model Product {
+  id               String   @id @default(cuid())
+  businessProductId Int     @default(autoincrement())
+  name             String
+  sku              String
+  price            Float
+  stock            Int      @default(0)
+  businessId       String
+  business         Business @relation(fields: [businessId], references: [id])
+
+  @@unique([businessId, sku])
+  @@unique([businessId, businessProductId])
+  saleItems        SaleItem[]
+}
+
+model Sale {
+  id          String   @id @default(cuid())
+  total       Float
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id])
+  items       SaleItem[]
+  createdAt   DateTime @default(now())
+}
+
+model SaleItem {
+  id        String  @id @default(cuid())
+  saleId    String
+  sale      Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  quantity  Int
+  price     Float
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  description String
+  amount      Float
+  category    String
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id])
+  createdAt   DateTime @default(now())
+}
