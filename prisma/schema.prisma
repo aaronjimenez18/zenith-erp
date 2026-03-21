@@ -1,5 +1,3 @@
-// prisma/schema.prisma
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,7 +7,13 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Plan {
+  BASIC
+  PREMIUM
+}
+
 enum Role {
+  SUPER_ADMIN
   ADMIN
   VENDEDOR
 }
@@ -17,6 +21,7 @@ enum Role {
 model Business {
   id        String    @id @default(cuid())
   name      String
+  plan      Plan      @default(BASIC)
   users     User[]
   products  Product[]
   sales     Sale[]
@@ -25,39 +30,40 @@ model Business {
 }
 
 model User {
-  id         String   @id @default(cuid())
-  email      String   @unique
-  password   String
-  role       Role     @default(ADMIN)
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id])
+  id          String   @id @default(cuid())
+  name        String?  // <--- AGREGAMOS ESTO (opcional con ?)
+  email       String   @unique
+  password    String
+  role        Role     @default(VENDEDOR)
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id])
 }
 
 model Product {
-  id               String   @id @default(cuid())
-  businessProductId Int     @default(autoincrement())
-  name             String
-  sku              String
-  price            Float
-  purchasePrice    Float    @default(0)
-  barcode          String?
-  imageUrl         String?
-  stock            Int      @default(0)
-  businessId       String
-  business         Business @relation(fields: [businessId], references: [id])
+  id                String     @id @default(cuid())
+  businessProductId Int        @default(autoincrement())
+  name              String
+  sku               String
+  price             Float
+  purchasePrice     Float      @default(0)
+  barcode           String?
+  imageUrl          String?
+  stock             Int        @default(0)
+  businessId        String
+  business          Business   @relation(fields: [businessId], references: [id])
 
   @@unique([businessId, sku])
   @@unique([businessId, businessProductId])
-  saleItems        SaleItem[]
+  saleItems         SaleItem[]
 }
 
 model Sale {
-  id          String   @id @default(cuid())
-  total       Float
-  businessId  String
-  business    Business @relation(fields: [businessId], references: [id])
-  items       SaleItem[]
-  createdAt   DateTime @default(now())
+  id         String     @id @default(cuid())
+  total      Float
+  businessId String
+  business   Business   @relation(fields: [businessId], references: [id])
+  items      SaleItem[]
+  createdAt  DateTime   @default(now())
 }
 
 model SaleItem {

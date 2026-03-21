@@ -4,27 +4,40 @@ import { jwtVerify } from "jose";
 
 export async function middleware(req: NextRequest) {
   const token = req.cookies.get("token")?.value;
+  const { pathname } = req.nextUrl;
 
-  // 1. Si no hay token, al login
   if (!token) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
 
   try {
-    // 2. Verificar el token con jose
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
-    await jwtVerify(token, secret);
+    // Extraemos el payload del token decodificado
+    const { payload } = await jwtVerify(token, secret);
+    
+    const role = payload.role as string;
 
-    // 3. Si es válido, permitir el paso
+    // --- REGLAS DE ACCESO ---
+
+    // 1. Si un VENDEDOR intenta entrar a rutas de configuración o reportes
+    const restrictedForVendedor = ["/dashboard/usuarios", "/dashboard/reportes", "/dashboard/configuracion"];
+    
+    if (role === "VENDEDOR" && restrictedForVendedor.some(path => pathname.startsWith(path))) {
+      // Lo mandamos a la parte que sí puede ver (el punto de venta o inventario básico)
+      return NextResponse.redirect(new URL("/dashboard/ventas", req.url));
+    }
+
+    // 2. Si un ADMIN (Gerente) intenta entrar a la gestión de suscripciones (Solo Super Admin)
+    if (role === "ADMIN" && pathname.startsWith("/dashboard/suscripcion")) {
+      return NextResponse.redirect(new URL("/dashboard", req.url));
+    }
+
     return NextResponse.next();
   } catch (error) {
-    // 4. Si el token es inválido o expiró, al login
-    console.error("JWT Middleware Error:", error);
     return NextResponse.redirect(new URL("/login", req.url));
   }
 }
 
-// Se aplica a todas las rutas que empiecen con /dashboard
 export const config = {
   matcher: ["/dashboard/:path*"],
 };
