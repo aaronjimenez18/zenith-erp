@@ -4,8 +4,8 @@ import { useState } from "react";
 import {
   createExpense,
   updateExpense,
-  EXPENSE_CATEGORIES,
 } from "../app/dashboard/expenses/actions";
+import { EXPENSE_CATEGORIES } from "@/lib/expense-categories";
 
 interface ExpenseFormProps {
   expense?: {
