@@ -1,7 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { createExpense, updateExpense, EXPENSE_CATEGORIES } from "../app/dashboard/expenses/actions";
+import {
+  createExpense,
+  updateExpense,
+  EXPENSE_CATEGORIES,
+} from "../app/dashboard/expenses/actions";
 
 interface ExpenseFormProps {
   expense?: {
@@ -14,7 +18,11 @@ interface ExpenseFormProps {
   onSuccess?: () => void;
 }
 
-export default function ExpenseForm({ expense, onClose, onSuccess }: ExpenseFormProps) {
+export default function ExpenseForm({
+  expense,
+  onClose,
+  onSuccess,
+}: ExpenseFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [category, setCategory] = useState(expense?.category || "");
   const [description, setDescription] = useState(expense?.description || "");
@@ -121,7 +129,11 @@ export default function ExpenseForm({ expense, onClose, onSuccess }: ExpenseForm
               disabled={isSubmitting}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
-              {isSubmitting ? "Guardando..." : expense ? "Actualizar" : "Guardar"}
+              {isSubmitting
+                ? "Guardando..."
+                : expense
+                  ? "Actualizar"
+                  : "Guardar"}
             </button>
           </div>
         </form>

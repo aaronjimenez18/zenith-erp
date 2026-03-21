@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import ExpenseForm from "../../../components/ExpenseForm";
-import { deleteExpense, EXPENSE_CATEGORIES } from "./actions";
+import { deleteExpense, seedDefaultExpenses } from "./actions";
+import { EXPENSE_CATEGORIES } from "./constants";
 
 interface Expense {
   id: string;
@@ -19,6 +20,7 @@ export default function ExpensesPage() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [totalGastos, setTotalGastos] = useState(0);
+  const [seedAttempted, setSeedAttempted] = useState(false);
 
   useEffect(() => {
     fetchExpenses();
@@ -29,8 +31,30 @@ export default function ExpensesPage() {
       const res = await fetch("/api/expenses");
       if (res.ok) {
         const data = await res.json();
+
+        if (data.length === 0 && !seedAttempted) {
+          setSeedAttempted(true);
+          const seedResult = await seedDefaultExpenses();
+          if (seedResult?.success) {
+            const updatedRes = await fetch("/api/expenses");
+            if (updatedRes.ok) {
+              const updatedData = await updatedRes.json();
+              setExpenses(updatedData);
+              const updatedTotal = updatedData.reduce(
+                (acc: number, exp: Expense) => acc + exp.amount,
+                0,
+              );
+              setTotalGastos(updatedTotal);
+              return;
+            }
+          }
+        }
+
         setExpenses(data);
-        const total = data.reduce((acc: number, exp: Expense) => acc + exp.amount, 0);
+        const total = data.reduce(
+          (acc: number, exp: Expense) => acc + exp.amount,
+          0,
+        );
         setTotalGastos(total);
       }
     } catch (error) {
@@ -41,15 +65,16 @@ export default function ExpensesPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm("¿Estás seguro de eliminar este gasto?")) {
+    if (confirm("Estas seguro de eliminar este gasto?")) {
       await deleteExpense(id);
       fetchExpenses();
     }
   };
 
-  const filteredExpenses = filter === "all" 
-    ? expenses 
-    : expenses.filter((exp) => exp.category === filter);
+  const filteredExpenses =
+    filter === "all"
+      ? expenses
+      : expenses.filter((exp) => exp.category === filter);
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleDateString("es-MX", {
@@ -66,15 +91,15 @@ export default function ExpensesPage() {
       "Sueldos y Nóminas": "bg-green-100 text-green-700",
       "Proveedores / Inventario": "bg-amber-100 text-amber-700",
       "Marketing y Publicidad": "bg-pink-100 text-pink-700",
-      "Seguros": "bg-cyan-100 text-cyan-700",
-      "Impuestos": "bg-red-100 text-red-700",
-      "Mantenimiento": "bg-orange-100 text-orange-700",
+      Seguros: "bg-cyan-100 text-cyan-700",
+      Impuestos: "bg-red-100 text-red-700",
+      Mantenimiento: "bg-orange-100 text-orange-700",
       "Materiales de Oficina": "bg-gray-100 text-gray-700",
-      "Transporte y Logística": "bg-teal-100 text-teal-700",
+      "Transporte y Logistica": "bg-teal-100 text-teal-700",
       "Software y Suscripciones": "bg-indigo-100 text-indigo-700",
-      "Capacitación": "bg-emerald-100 text-emerald-700",
+      Capacitacion: "bg-emerald-100 text-emerald-700",
       "Comisiones Bancarias": "bg-slate-100 text-slate-700",
-      "Otros": "bg-neutral-100 text-neutral-700",
+      Otros: "bg-neutral-100 text-neutral-700",
     };
     return colors[category] || "bg-gray-100 text-gray-700";
   };
@@ -111,7 +136,9 @@ export default function ExpensesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 shadow-sm">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Total Gastos</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Total Gastos
+          </p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
             ${totalGastos.toFixed(2)}
           </p>
@@ -119,17 +146,24 @@ export default function ExpensesPage() {
         <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 shadow-sm">
           <p className="text-sm text-gray-500 dark:text-gray-400">Este Mes</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            ${expenses.filter(e => {
-              const expDate = new Date(e.createdAt);
-              const now = new Date();
-              return expDate.getMonth() === now.getMonth() && expDate.getFullYear() === now.getFullYear();
-            }).reduce((acc, e) => acc + e.amount, 0).toFixed(2)}
+            $
+            {expenses
+              .filter((e) => {
+                const expDate = new Date(e.createdAt);
+                const now = new Date();
+                return (
+                  expDate.getMonth() === now.getMonth() &&
+                  expDate.getFullYear() === now.getFullYear()
+                );
+              })
+              .reduce((acc, e) => acc + e.amount, 0)
+              .toFixed(2)}
           </p>
         </div>
         <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 shadow-sm">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Categorías</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Categorias</p>
           <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            {new Set(expenses.map(e => e.category)).size}
+            {new Set(expenses.map((e) => e.category)).size}
           </p>
         </div>
       </div>
@@ -165,8 +199,10 @@ export default function ExpensesPage() {
           <thead className="bg-gray-50 dark:bg-gray-900 text-gray-500 text-xs uppercase font-medium">
             <tr>
               <th className="px-6 py-3 text-left tracking-wider">Fecha</th>
-              <th className="px-6 py-3 text-left tracking-wider">Categoría</th>
-              <th className="px-6 py-3 text-left tracking-wider">Descripción</th>
+              <th className="px-6 py-3 text-left tracking-wider">Categoria</th>
+              <th className="px-6 py-3 text-left tracking-wider">
+                Descripcion
+              </th>
               <th className="px-6 py-3 text-right tracking-wider">Monto</th>
               <th className="px-6 py-3 text-center tracking-wider">Acciones</th>
             </tr>
@@ -174,11 +210,16 @@ export default function ExpensesPage() {
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
             {filteredExpenses.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
+                <td
+                  colSpan={5}
+                  className="px-6 py-12 text-center text-gray-500"
+                >
                   <div className="flex flex-col items-center">
-                    <span className="text-4xl mb-2">💸</span>
-                    <p>No hay gastos registrados aún.</p>
-                    <p className="text-sm">Haz clic en "+ Nuevo Gasto" para comenzar.</p>
+                    <span className="text-4xl mb-2"></span>
+                    <p>No hay gastos registrados aun.</p>
+                    <p className="text-sm">
+                      Haz clic en "+ Nuevo Gasto" para comenzar.
+                    </p>
                   </div>
                 </td>
               </tr>
@@ -192,7 +233,9 @@ export default function ExpensesPage() {
                     {formatDate(expense.createdAt)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(expense.category)}`}>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(expense.category)}`}
+                    >
                       {expense.category}
                     </span>
                   </td>

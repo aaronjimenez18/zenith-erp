@@ -5,27 +5,33 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 
-export const EXPENSE_CATEGORIES = [
-  "Renta / Leasing",
-  "Servicios (Luz, Agua, Internet)",
-  "Sueldos y Nóminas",
-  "Proveedores / Inventario",
-  "Marketing y Publicidad",
-  "Seguros",
-  "Impuestos",
-  "Mantenimiento",
-  "Materiales de Oficina",
-  "Transporte y Logística",
-  "Software y Suscripciones",
-  "Capacitación",
-  "Comisiones Bancarias",
-  "Otros",
+const DEFAULT_EXPENSES = [
+  {
+    category: "Renta / Leasing",
+    description: "Pago mensual del local",
+    amount: 12000,
+  },
+  {
+    category: "Servicios (Luz, Agua, Internet)",
+    description: "Servicios básicos del mes",
+    amount: 2800,
+  },
+  {
+    category: "Software y Suscripciones",
+    description: "Suscripciones de herramientas SaaS",
+    amount: 1350,
+  },
+  {
+    category: "Marketing y Publicidad",
+    description: "Campana promocional en redes sociales",
+    amount: 2200,
+  },
 ];
 
 async function getAuthData() {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
-  if (!token) throw new Error("No estás autenticado");
+  if (!token) throw new Error("No estas autenticado");
 
   const secret = new TextEncoder().encode(process.env.JWT_SECRET);
   const { payload } = await jwtVerify(token, secret);
@@ -34,6 +40,30 @@ async function getAuthData() {
     businessId: payload.businessId as string,
     userId: payload.userId as string,
   };
+}
+
+export async function seedDefaultExpenses() {
+  try {
+    const { businessId } = await getAuthData();
+    const existingCount = await db.expense.count({ where: { businessId } });
+
+    if (existingCount > 0) {
+      return { success: true, created: false };
+    }
+
+    await db.expense.createMany({
+      data: DEFAULT_EXPENSES.map((expense) => ({
+        ...expense,
+        businessId,
+      })),
+    });
+
+    revalidatePath("/dashboard/expenses");
+    return { success: true, created: true };
+  } catch (error) {
+    console.error("Error al crear gastos predefinidos:", error);
+    return { error: "No se pudieron crear los gastos predefinidos" };
+  }
 }
 
 export async function createExpense(formData: FormData) {

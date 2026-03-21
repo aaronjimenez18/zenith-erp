@@ -1,0 +1,16 @@
+export const EXPENSE_CATEGORIES = [
+  "Renta / Leasing",
+  "Servicios (Luz, Agua, Internet)",
+  "Sueldos y Nóminas",
+  "Proveedores / Inventario",
+  "Marketing y Publicidad",
+  "Seguros",
+  "Impuestos",
+  "Mantenimiento",
+  "Materiales de Oficina",
+  "Transporte y Logística",
+  "Software y Suscripciones",
+  "Capacitación",
+  "Comisiones Bancarias",
+  "Otros",
+];
