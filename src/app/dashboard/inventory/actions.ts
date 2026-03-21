@@ -28,16 +28,82 @@ export async function createProduct(formData: FormData) {
     const name = formData.get("name") as string;
     const sku = formData.get("sku") as string;
     const price = parseFloat(formData.get("price") as string);
+    const purchasePrice = parseFloat(formData.get("purchasePrice") as string) || 0;
     const stock = parseInt(formData.get("stock") as string);
+    const barcode = (formData.get("barcode") as string) || null;
+    const imageUrl = (formData.get("imageUrl") as string) || null;
 
     await db.product.create({
-      data: { name, sku, price, stock, businessId },
+      data: { name, sku, price, purchasePrice, stock, barcode, imageUrl, businessId },
     });
 
     revalidatePath("/dashboard/inventory");
     return { success: true };
-  } catch (error) {
-    return { error: "No se pudo crear el producto" };
+  } catch (error: any) {
+    console.error("Error creando producto:", error);
+    return { error: error.message || "No se pudo crear el producto" };
+  }
+}
+
+// --- Acción: Actualizar Producto ---
+export async function updateProduct(
+  productId: string,
+  data: {
+    name?: string;
+    sku?: string;
+    price?: number;
+    purchasePrice?: number;
+    stock?: number;
+    barcode?: string | null;
+    imageUrl?: string | null;
+  }
+) {
+  try {
+    const { businessId } = await getAuthData();
+
+    const product = await db.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product || product.businessId !== businessId) {
+      return { error: "Producto no encontrado" };
+    }
+
+    await db.product.update({
+      where: { id: productId },
+      data,
+    });
+
+    revalidatePath("/dashboard/inventory");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error actualizando producto:", error);
+    return { error: error.message || "No se pudo actualizar el producto" };
+  }
+}
+
+// --- Acción: Eliminar Producto ---
+export async function deleteProduct(productId: string) {
+  try {
+    const { businessId } = await getAuthData();
+
+    const product = await db.product.findUnique({
+      where: { id: productId },
+    });
+
+    if (!product || product.businessId !== businessId) {
+      return { error: "Producto no encontrado" };
+    }
+
+    await db.product.delete({
+      where: { id: productId },
+    });
+
+    revalidatePath("/dashboard/inventory");
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error eliminando producto:", error);
+    return { error: error.message || "No se pudo eliminar el producto" };
   }
 }
 
