@@ -7,7 +7,8 @@ import {
   Package, 
   AlertCircle, 
   History, 
-} from "lucide-react"; 
+} from "lucide-react";
+import { TrendChart } from "@/components/TrendChart";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -17,12 +18,11 @@ export default async function DashboardPage() {
   if (!token) redirect("/login");
 
   let businessId: string;
-  let userName: string = "Usuario"; // Valor por defecto para que no truene
+  let userName: string = "Usuario";
 
   try {
     const secret = new TextEncoder().encode(process.env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
-    
     businessId = payload.businessId as string;
     
     // Intentamos sacar el nombre, si no, el email, si no, se queda como "Usuario"
@@ -31,33 +31,72 @@ export default async function DashboardPage() {
     } else if (payload.email) {
       userName = (payload.email as string).split('@')[0];
     }
-  } catch (error) {
-    console.error("Error verificando token:", error);
+  } catch {
     redirect("/login");
   }
 
   // Si por alguna razón no tenemos businessId, no podemos consultar la DB
   if (!businessId) redirect("/login");
 
-  // Consultas a la base de datos con manejo de errores básico
-  const [productsCount, lowStockProducts, totalSales, recentSales] =
-    await Promise.all([
-      db.product.count({ where: { businessId } }),
-      db.product.findMany({
-        where: { businessId, stock: { lte: 5 } },
-        take: 5,
-        orderBy: { stock: 'asc' }
-      }),
-      db.sale.aggregate({
-        where: { businessId },
-        _sum: { total: true },
-      }),
-      db.sale.findMany({
-        where: { businessId },
-        orderBy: { createdAt: "desc" },
-        take: 5,
-      }),
-    ]);
+  const [
+    productsCount, 
+    lowStockProducts, 
+    totalSales, 
+    recentSales,
+    monthlySales,
+    monthlyExpenses
+  ] = await Promise.all([
+    db.product.count({ where: { businessId } }),
+    db.product.findMany({
+      where: { businessId, stock: { lte: 5 } },
+      take: 5,
+      orderBy: { stock: 'asc' }
+    }),
+    db.sale.aggregate({
+      where: { businessId },
+      _sum: { total: true },
+    }),
+    db.sale.findMany({
+      where: { businessId },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+    db.sale.findMany({
+      where: { businessId },
+      select: { total: true, createdAt: true },
+    }),
+    db.expense.findMany({
+      where: { businessId },
+      select: { amount: true, createdAt: true },
+    }),
+  ]);
+
+  const months = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  
+  const chartData = months.map((month, index) => {
+    const monthNum = index + 1;
+    const currentYear = new Date().getFullYear();
+    
+    const monthSales = monthlySales
+      .filter(s => {
+        const date = new Date(s.createdAt);
+        return date.getMonth() + 1 === monthNum && date.getFullYear() === currentYear;
+      })
+      .reduce((sum, s) => sum + (s.total || 0), 0);
+    
+    const monthExpenses = monthlyExpenses
+      .filter(e => {
+        const date = new Date(e.createdAt);
+        return date.getMonth() + 1 === monthNum && date.getFullYear() === currentYear;
+      })
+      .reduce((sum, e) => sum + (e.amount || 0), 0);
+    
+    return {
+      name: month,
+      ingresos: monthSales,
+      gastos: monthExpenses,
+    };
+  });
 
   return (
     <div className="min-h-screen bg-[#f8fafc] p-8 space-y-10">
@@ -73,7 +112,8 @@ export default async function DashboardPage() {
         </div>
       </header>
 
-      {/* Tarjetas de Métricas */}
+      <TrendChart data={chartData} />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
           <div className="flex justify-between items-start mb-4">
