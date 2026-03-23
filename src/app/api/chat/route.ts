@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
+import { askAI } from "@/lib/ai/agent";
 
 export async function POST(req: Request) {
   try {
-    const { message } = await req.json();
-    const text = message.toLowerCase();
+    const { message, history } = await req.json();
 
     const user = await getUserFromToken();
     if (!user)
@@ -13,124 +13,117 @@ export async function POST(req: Request) {
 
     const businessId = user.businessId;
 
-    // INVENTARIO
-    if (text.includes("inventario") || text.includes("stock tengo")) {
-      const products = await db.product.findMany({ where: { businessId } });
-      if (!products.length)
-        return NextResponse.json({
-          text: "No hay productos en tu inventario.",
-        });
-
-      const list = products
-        .map((p) => `• ${p.name} — stock: ${p.stock} — $${p.price}`)
-        .join("\n");
-      return NextResponse.json({ text: `📦 Inventario actual:\n\n${list}` });
-    }
-
-    // PRODUCTOS CON POCO STOCK
-    if (text.includes("stock bajo") || text.includes("poco stock")) {
-      const products = await db.product.findMany({
-        where: { businessId, stock: { lt: 5 } },
-      });
-      if (!products.length)
-        return NextResponse.json({
-          text: "No tienes productos con stock bajo.",
-        });
-
-      const list = products
-        .map((p) => `• ${p.name} — stock: ${p.stock}`)
-        .join("\n");
-      return NextResponse.json({
-        text: `⚠️ Productos con poco stock:\n\n${list}`,
-      });
-    }
-
-    // VENTAS HOY
-    if (text.includes("vendi hoy") || text.includes("ventas hoy")) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const sales = await db.sale.findMany({
-        where: { businessId, createdAt: { gte: today } },
-      });
-      const total = sales.reduce((a, s) => a + s.total, 0);
-      return NextResponse.json({ text: `💰 Ventas de hoy: $${total}` });
-    }
-
-    // PRODUCTO MÁS VENDIDO
-    if (text.includes("producto vendo mas")) {
-      const items = await db.saleItem.findMany({
-        include: { product: true, sale: true },
-        where: { sale: { businessId } },
-      });
-      if (!items.length)
-        return NextResponse.json({ text: "No hay ventas registradas." });
-      const counter: Record<string, number> = {};
-      items.forEach((i) => {
-        counter[i.product.name] = (counter[i.product.name] || 0) + i.quantity;
-      });
-      const top = Object.entries(counter).sort((a, b) => b[1] - a[1])[0];
-      return NextResponse.json({
-        text: `🏆 Producto más vendido:\n\n${top[0]} (${top[1]} unidades)`,
-      });
-    }
-
-    // GASTOS
-    if (text.includes("gastos")) {
-      const expenses = await db.expense.findMany({ where: { businessId } });
-      const total = expenses.reduce((a, e) => a + e.amount, 0);
-      return NextResponse.json({ text: `🧾 Gastos totales: $${total}` });
-    }
-
-    // CREAR PRODUCTO
-    if (text.includes("crear producto")) {
+    // Acciones rápidas que no requieren IA
+    if (message.toLowerCase().includes("crear producto")) {
       const parts = message.split(",");
-      if (parts.length < 3)
-        return NextResponse.json({
-          text: "Usa: crear producto nombre,precio,stock",
-        });
+      if (parts.length < 3) {
+        const aiResponse = await askAI(
+          "El usuario quiere crear un producto pero no dio todos los datos. Pide el nombre, precio y stock separados por comas.",
+          {
+            products: [],
+            todaySales: 0,
+            totalSales: 0,
+            expenses: 0,
+            topProducts: [],
+          }
+        );
+        return NextResponse.json({ text: aiResponse });
+      }
 
-      const name = parts[0].replace("crear producto", "").trim();
-      const price = Number(parts[1]);
-      const stock = Number(parts[2]);
+      const name = message.split(",")[0].replace(/crear producto/gi, "").trim();
+      const price = Number(message.split(",")[1]);
+      const stock = Number(message.split(",")[2]);
+
+      if (isNaN(price) || isNaN(stock)) {
+        return NextResponse.json({
+          text: "Precio y stock deben ser números. Ejemplo: crear producto nombre,50,10",
+        });
+      }
+
       const sku =
         name.toUpperCase().replaceAll(" ", "-") +
         "-" +
         Math.floor(Math.random() * 10000);
 
-      const product = await db.product.create({
+      await db.product.create({
         data: { name, sku, price, stock, businessId },
       });
 
       return NextResponse.json({
-        text: `✅ Producto creado\nNombre: ${product.name}\nStock: ${product.stock}\nPrecio: $${product.price}`,
+        text:
+          "Producto creado exitosamente:\n" +
+          "- Nombre: " +
+          name +
+          "\n" +
+          "- Stock: " +
+          stock +
+          "\n" +
+          "- Precio: $" +
+          price,
       });
     }
 
-    // ANALISIS NEGOCIO
-    if (text.includes("analiza") || text.includes("negocio")) {
-      const sales = await db.sale.findMany({ where: { businessId } });
-      const expenses = await db.expense.findMany({ where: { businessId } });
-      const revenue = sales.reduce((a, s) => a + s.total, 0);
-      const costs = expenses.reduce((a, e) => a + e.amount, 0);
-      const profit = revenue - costs;
-      return NextResponse.json({
-        text: `📊 Análisis del negocio\nIngresos: $${revenue}\nGastos: $${costs}\nGanancia: $${profit}`,
-      });
-    }
+    // Cargar contexto del negocio para la IA
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    return NextResponse.json({
-      text:
-        "🤖 Zenith AI Copilot\n\n" +
-        "Puedes preguntarme:\n" +
-        "• que stock tengo\n" +
-        "• que productos tienen poco stock\n" +
-        "• cuanto vendi hoy\n" +
-        "• que producto vendo mas\n" +
-        "• analiza mi negocio\n" +
-        "• crear producto teclado,50,10",
+    const [products, todaySalesData, allSales, expenses, saleItems] =
+      await Promise.all([
+        db.product.findMany({
+          where: { businessId },
+          select: { name: true, stock: true, price: true },
+        }),
+        db.sale.findMany({
+          where: { businessId, createdAt: { gte: today } },
+          select: { total: true },
+        }),
+        db.sale.findMany({
+          where: { businessId },
+          select: { total: true },
+        }),
+        db.expense.findMany({
+          where: { businessId },
+          select: { amount: true },
+        }),
+        db.saleItem.findMany({
+          include: { product: { select: { name: true } }, sale: true },
+          where: { sale: { businessId } },
+        }),
+      ]);
+
+    const todaySales = todaySalesData.reduce((a, s) => a + s.total, 0);
+    const totalSales = allSales.reduce((a, s) => a + s.total, 0);
+    const totalExpenses = expenses.reduce((a, e) => a + e.amount, 0);
+
+    const productCounter: Record<string, number> = {};
+    saleItems.forEach((item) => {
+      const name = item.product.name;
+      productCounter[name] = (productCounter[name] || 0) + item.quantity;
     });
+    const topProducts = Object.entries(productCounter)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([name, quantity]) => ({ name, quantity }));
+
+    // Llamar a la IA con el contexto completo
+    const aiResponse = await askAI(
+      message,
+      {
+        products,
+        todaySales,
+        totalSales,
+        expenses: totalExpenses,
+        topProducts,
+      },
+      history || []
+    );
+
+    return NextResponse.json({ text: aiResponse });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ text: "Error del asistente" }, { status: 500 });
+    return NextResponse.json(
+      { text: "Error del asistente. Intenta de nuevo." },
+      { status: 500 }
+    );
   }
 }

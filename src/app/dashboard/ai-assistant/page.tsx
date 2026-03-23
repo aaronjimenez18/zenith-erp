@@ -13,11 +13,12 @@ export default function AIAssistantPage() {
   const bottomRef = useRef<HTMLDivElement>(null);
 
   const suggestions = [
-    "que stock tengo",
-    "que productos tienen poco stock",
-    "cuanto vendi hoy",
-    "que producto vendo mas",
-    "analiza mi negocio",
+    "Cual es mi ganancia este mes?",
+    "Que productos debo reponer pronto?",
+    "Dame un resumen de mis ventas",
+    "Cual es mi producto estrella?",
+    "Tengo gastos muy altos?",
+    "Que me recomiendas vender mas?",
   ];
 
   useEffect(() => {
@@ -37,7 +38,10 @@ export default function AIAssistantPage() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({
+          message,
+          history: messages.slice(-10),
+        }),
       });
 
       const data = await res.json();
@@ -46,7 +50,7 @@ export default function AIAssistantPage() {
     } catch {
       setMessages((prev) => [
         ...prev,
-        { role: "model", content: "❌ Error al conectar con Zenith AI" },
+        { role: "model", content: "Error al conectar con Zenith AI" },
       ]);
     }
 
