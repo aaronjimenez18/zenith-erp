@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Product } from "@prisma/client";
-import { Pencil, Trash2, Check, X, ImageIcon } from "lucide-react";
+import { Pencil, Trash2, Check, X, ImageIcon, Search } from "lucide-react";
 import { updateProduct, deleteProduct } from "../actions";
 
 type ProductWithEditable = Product & {
@@ -13,6 +13,18 @@ export function InventoryTable({ products }: { products: Product[] }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Product>>({});
   const [localProducts, setLocalProducts] = useState<ProductWithEditable[]>(products);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredProducts = useMemo(() => {
+    if (!searchTerm) return localProducts;
+    const term = searchTerm.toLowerCase();
+    return localProducts.filter(
+      (p) =>
+        p.name.toLowerCase().includes(term) ||
+        p.sku.toLowerCase().includes(term) ||
+        (p.barcode && p.barcode.toLowerCase().includes(term))
+    );
+  }, [localProducts, searchTerm]);
 
   const startEdit = (product: Product) => {
     setEditingId(product.id);
@@ -75,23 +87,49 @@ export function InventoryTable({ products }: { products: Product[] }) {
     setEditData((prev) => ({ ...prev, [field]: value }));
   };
 
-  if (localProducts.length === 0) {
+  if (filteredProducts.length === 0) {
     return (
       <div className="px-6 py-12 text-center text-gray-500">
         <div className="flex flex-col items-center">
-          <span className="text-4xl mb-2">📦</span>
-          <p>No hay productos registrados aún.</p>
-          <p className="text-sm">
-            Haz clic en &quot;+ Nuevo Producto&quot; para comenzar.
-          </p>
+          <span className="text-4xl mb-2">🔍</span>
+          <p>{searchTerm ? "No se encontraron productos." : "No hay productos registrados aún."}</p>
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="mt-2 text-blue-600 hover:underline"
+            >
+              Limpiar búsqueda
+            </button>
+          )}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="min-w-full divide-y divide-gray-200">
+    <div>
+      <div className="p-4 border-b bg-gray-50">
+        <div className="relative max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Buscar por nombre, SKU o código de barras..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
           <tr>
             <th className="px-4 py-3 text-left tracking-wider">Imagen</th>
@@ -106,7 +144,7 @@ export function InventoryTable({ products }: { products: Product[] }) {
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200 bg-white">
-          {localProducts.map((product) => (
+          {filteredProducts.map((product) => (
             <tr
               key={product.id}
               className="hover:bg-gray-50 transition-colors"
@@ -292,5 +330,6 @@ export function InventoryTable({ products }: { products: Product[] }) {
         </tbody>
       </table>
     </div>
+  </div>
   );
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Product } from "@prisma/client";
 import { createSale } from "@/app/dashboard/inventory/actions";
+import { Search, X } from "lucide-react";
 
 interface CartItem extends Product {
   quantity: number;
@@ -11,6 +12,17 @@ interface CartItem extends Product {
 export default function POS({ products }: { products: Product[] }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+
+  const filteredProducts = useMemo(() => {
+    if (!searchTerm) return products;
+    const term = searchTerm.toLowerCase();
+    return products.filter(
+      (p) =>
+        p.name.toLowerCase().includes(term) ||
+        p.sku.toLowerCase().includes(term)
+    );
+  }, [products, searchTerm]);
 
   const addToCart = (product: Product) => {
     if (product.stock <= 0) return alert("Producto sin stock");
@@ -63,9 +75,34 @@ export default function POS({ products }: { products: Product[] }) {
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
       {/* Lista de Productos Disponibles */}
       <div className="md:col-span-2 space-y-4">
-        <h2 className="text-xl font-bold">Productos</h2>
+        <div className="flex gap-4 items-center">
+          <h2 className="text-xl font-bold">Productos</h2>
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o SKU..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-10 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+        {filteredProducts.length === 0 && (
+          <div className="text-center py-8 text-gray-500">
+            {searchTerm ? "No se encontraron productos." : "No hay productos disponibles."}
+          </div>
+        )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {products.map((product) => (
+          {filteredProducts.map((product) => (
             <div
               key={product.id}
               onClick={() => addToCart(product)}
