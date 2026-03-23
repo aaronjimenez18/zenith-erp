@@ -57,7 +57,7 @@ export function Sidebar() {
   const currentPlan = user?.plan || "BASIC";
 
   return (
-    <div className="flex flex-col h-screen w-64 bg-slate-900 text-slate-300 border-r border-slate-800">
+    <div className="flex flex-col h-full w-64 bg-slate-900 text-slate-300 border-r border-slate-800">
       <div className="p-6">
         <h2 className="text-2xl font-bold text-white tracking-tight">Zenith ERP</h2>
         <div className="flex items-center gap-2 mt-1">

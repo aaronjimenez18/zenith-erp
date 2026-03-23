@@ -27,7 +27,7 @@ export default async function SalesPage() {
   });
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6 pt-20 md:pt-6">
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900">Punto de Venta</h1>
         <p className="text-gray-500">

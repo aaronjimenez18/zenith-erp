@@ -128,7 +128,7 @@ export default function POS({ products }: { products: Product[] }) {
       {/* Carrito / Resumen de Venta */}
       <div className="bg-gray-50 p-6 rounded-lg border h-fit sticky top-6">
         <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-          🛒 Carrito
+          Carrito
         </h2>
 
         {cart.length === 0 ? (

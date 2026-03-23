@@ -91,7 +91,6 @@ export function InventoryTable({ products }: { products: Product[] }) {
     return (
       <div className="px-6 py-12 text-center text-gray-500">
         <div className="flex flex-col items-center">
-          <span className="text-4xl mb-2">🔍</span>
           <p>{searchTerm ? "No se encontraron productos." : "No hay productos registrados aún."}</p>
           {searchTerm && (
             <button

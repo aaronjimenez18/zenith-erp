@@ -1,5 +1,6 @@
 // src/app/dashboard/layout.tsx
 import { Sidebar } from "@/components/sidebar";
+import { MobileHeader } from "@/components/MobileHeader";
 
 export default function DashboardLayout({
   children,
@@ -8,10 +9,17 @@ export default function DashboardLayout({
 }) {
   return (
     <div className="flex h-screen bg-slate-50">
-      {/* Barra Lateral Fija */}
-      <Sidebar />
+      {/* Sidebar - hidden on mobile, visible on md+ */}
+      <div className="hidden md:block">
+        <Sidebar />
+      </div>
 
-      <main className="flex-1 overflow-y-auto">{children}</main>
+      {/* Mobile Header with hamburger menu */}
+      <div className="md:hidden">
+        <MobileHeader />
+      </div>
+
+      <main className="flex-1 overflow-y-auto md:ml-0">{children}</main>
     </div>
   );
 }

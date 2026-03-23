@@ -111,8 +111,8 @@ export default async function DashboardPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-8 space-y-10">
-      <header className="flex justify-between items-end">
+    <div className="min-h-screen bg-[#f8fafc] p-4 md:p-8 space-y-6 md:space-y-10 pt-20 md:pt-8">
+      <header className="flex justify-between items-end flex-col md:flex-row gap-4">
         <div>
           <p className="text-sm font-medium text-slate-500 mb-1 capitalize">
             {new Date().toLocaleDateString("es-MX", {

@@ -42,8 +42,21 @@ export default function UsersPage() {
     setLoading(false);
   };
 
+  const handleDelete = async (userId: string) => {
+    if (!confirm("¿Estás seguro de eliminar este usuario?")) return;
+    
+    const res = await fetch(`/api/users?id=${userId}`, { method: "DELETE" });
+    if (res.ok) {
+      fetchUsers();
+      alert("Usuario eliminado");
+    } else {
+      const data = await res.json();
+      alert(data.error);
+    }
+  };
+
   return (
-    <div className="p-8 max-w-6xl mx-auto">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto pt-20 md:pt-8">
       <header className="mb-8">
         <h1 className="text-3xl font-bold text-slate-900">Gestión de Usuarios</h1>
         <p className="text-slate-500">Administra los accesos de tus empleados</p>
@@ -111,7 +124,7 @@ export default function UsersPage() {
                   </td>
                   <td className="p-4 text-right">
                     {u.role !== "SUPER_ADMIN" && (
-                      <button className="text-red-400 hover:text-red-600 p-2">
+                      <button onClick={() => handleDelete(u.id)} className="text-red-400 hover:text-red-600 p-2">
                         <Trash2 className="w-5 h-5" />
                       </button>
                     )}

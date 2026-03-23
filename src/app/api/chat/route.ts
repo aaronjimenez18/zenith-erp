@@ -3,6 +3,64 @@ import { db } from "@/lib/db";
 import { getUserFromToken } from "@/lib/auth";
 import { askAI } from "@/lib/ai/agent";
 
+export async function GET(req: Request) {
+  try {
+    const user = await getUserFromToken();
+    if (!user)
+      return NextResponse.json({ error: "No autorizado" }, { status: 401 });
+
+    const businessId = user.businessId;
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+
+    const [products, monthSales, lastMonthSales, monthExpenses, lastMonthExpenses, totalSales, todaySales] = 
+      await Promise.all([
+        db.product.count({ where: { businessId } }),
+        db.sale.aggregate({
+          where: { businessId, createdAt: { gte: startOfMonth } },
+          _sum: { total: true },
+        }),
+        db.sale.aggregate({
+          where: { businessId, createdAt: { gte: startOfLastMonth, lte: endOfLastMonth } },
+          _sum: { total: true },
+        }),
+        db.expense.aggregate({
+          where: { businessId, createdAt: { gte: startOfMonth } },
+          _sum: { amount: true },
+        }),
+        db.expense.aggregate({
+          where: { businessId, createdAt: { gte: startOfLastMonth, lte: endOfLastMonth } },
+          _sum: { amount: true },
+        }),
+        db.sale.count({ where: { businessId } }),
+        db.sale.findMany({
+          where: { businessId, createdAt: { gte: new Date(now.setHours(0,0,0,0)) } },
+          select: { total: true },
+        }),
+      ]);
+
+    const monthRevenue = monthSales._sum.total || 0;
+    const lastMonthRevenue = lastMonthSales._sum.total || 0;
+    const monthExpensesAmount = monthExpenses._sum.amount || 0;
+    const lastMonthExpensesAmount = lastMonthExpenses._sum.amount || 0;
+
+    return NextResponse.json({
+      revenue: monthRevenue,
+      revenueChange: lastMonthRevenue ? ((monthRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0,
+      salesCount: totalSales,
+      todayRevenue: todaySales.reduce((a, s) => a + s.total, 0),
+      expenses: monthExpensesAmount,
+      expensesChange: lastMonthExpensesAmount ? ((monthExpensesAmount - lastMonthExpensesAmount) / lastMonthExpensesAmount) * 100 : 0,
+      productsCount: products,
+    });
+  } catch (error) {
+    console.error(error);
+    return NextResponse.json({ error: "Error al obtener estadísticas" }, { status: 500 });
+  }
+}
+
 export async function POST(req: Request) {
   try {
     const { message, history } = await req.json();

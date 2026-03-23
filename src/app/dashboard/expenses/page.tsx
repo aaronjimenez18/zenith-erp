@@ -113,7 +113,7 @@ export default function ExpensesPage() {
   }
 
   return (
-    <div className="p-6">
+    <div className="p-4 md:p-6 pt-20 md:pt-6">
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
