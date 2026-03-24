@@ -24,11 +24,14 @@ export default function LoginPage() {
       const data = await res.json();
 
       if (res.ok) {
-        // Al usar cookies httpOnly, el navegador la guarda automáticamente
         router.push("/dashboard");
-        router.refresh(); // Refrescamos para que el layout detecte al usuario
+        router.refresh();
       } else {
-        alert(data.error || "Credenciales incorrectas");
+        if (data.emailNotVerified) {
+          alert("Email no verificado. Por favor revisa tu correo y verifica tu cuenta antes de iniciar sesión.");
+        } else {
+          alert(data.error || "Credenciales incorrectas");
+        }
       }
     } catch (error) {
       console.error("Error en el login:", error);

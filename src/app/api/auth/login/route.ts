@@ -20,6 +20,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "User not found" }, { status: 401 });
     }
 
+    if (!user.emailVerified) {
+      return NextResponse.json({
+        error: "Email no verificado. Por favor revisa tu correo y verifica tu cuenta.",
+        emailNotVerified: true,
+      }, { status: 403 });
+    }
+
     const valid = await bcrypt.compare(password, user.password);
 
     if (!valid) {

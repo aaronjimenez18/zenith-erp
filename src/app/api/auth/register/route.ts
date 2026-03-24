@@ -1,20 +1,23 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { db } from "@/lib/db";
+import { sendVerificationEmail } from "@/lib/email";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { businessName, name, email, password, plan } = body;
 
-    // 1. Verificación manual (evita que Prisma truene por datos nulos)
     if (!email || !password || !name || !businessName) {
       return NextResponse.json({ error: "Faltan campos" }, { status: 400 });
     }
 
+    const normalizedEmail = email.toLowerCase();
     const hashedPassword = await bcrypt.hash(password, 10);
+    const verificationToken = crypto.randomUUID();
+    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-    // 2. Creación con manejo de Plan (aseguramos que sea el Enum correcto)
     const business = await db.business.create({
       data: {
         name: businessName,
@@ -22,28 +25,30 @@ export async function POST(req: Request) {
         users: {
           create: {
             name: name,
-            email: email.toLowerCase(), // Normalizamos el email
+            email: normalizedEmail,
             password: hashedPassword,
             role: "SUPER_ADMIN",
+            verificationToken,
+            verificationTokenExpiry: tokenExpiry,
           },
         },
       },
-      // Solo seleccionamos el ID para evitar errores de serialización
-      select: { id: true } 
+      select: { id: true },
     });
 
-    // 3. Respuesta limpia
-    return NextResponse.json({ 
-      success: true, 
-      businessId: business.id 
+    await sendVerificationEmail(normalizedEmail, verificationToken, name);
+
+    return NextResponse.json({
+      success: true,
+      message: "Usuario creado. Por favor verifica tu correo electrónico.",
+      emailSent: true,
     }, { status: 201 });
 
-  } catch (error: any) {
-    // IMPORTANTE: Esto te dirá el error real en tu terminal de VS Code
+  } catch (error) {
+    const err = error as { code?: string };
     console.error("DEBUG REGISTRO:", error);
 
-    // Si el error es porque el email ya existe (P2002 es el código de Prisma)
-    if (error.code === 'P2002') {
+    if (err.code === "P2002") {
       return NextResponse.json({ error: "El correo ya está registrado" }, { status: 400 });
     }
 

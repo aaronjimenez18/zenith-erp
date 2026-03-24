@@ -29,8 +29,14 @@ function RegisterForm() {
       body: JSON.stringify(formData),
     });
 
-    if (res.ok) router.push("/login");
-    else alert("Error al registrar");
+    const data = await res.json();
+
+    if (res.ok) {
+      alert("¡Registro exitoso! Por favor revisa tu correo electrónico para verificar tu cuenta.");
+      router.push("/login");
+    } else {
+      alert(data.error || "Error al registrar");
+    }
   };
 
   return (

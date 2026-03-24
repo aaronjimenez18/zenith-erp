@@ -30,13 +30,16 @@ model Business {
 }
 
 model User {
-  id          String   @id @default(cuid())
-  name        String?  // <--- AGREGAMOS ESTO (opcional con ?)
-  email       String   @unique
-  password    String
-  role        Role     @default(VENDEDOR)
-  businessId  String
-  business    Business @relation(fields: [businessId], references: [id])
+  id                       String    @id @default(cuid())
+  name                     String?
+  email                    String    @unique
+  password                 String
+  role                     Role      @default(VENDEDOR)
+  businessId               String
+  business                 Business  @relation(fields: [businessId], references: [id])
+  emailVerified            DateTime?
+  verificationToken        String?
+  verificationTokenExpiry  DateTime?
 }
 
 model Product {
