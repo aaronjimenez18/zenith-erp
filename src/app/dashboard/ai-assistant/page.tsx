@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Zap, TrendingUp, Package, Receipt, BrainCircuit, FileText, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight } from "lucide-react";
+import { Send, Bot, User, Zap, TrendingUp, Package, Receipt, BrainCircuit, FileText, TrendingDown, DollarSign, ArrowUpRight, ArrowDownRight, Menu, X } from "lucide-react";
 
 interface Stats {
   revenue: number;
@@ -19,6 +19,7 @@ export default function AIAssistantPage() {
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<Stats | null>(null);
   const [recentChats, setRecentChats] = useState<string[]>([]);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const bottomRef = useRef<HTMLDivElement>(null);
 
@@ -92,7 +93,14 @@ export default function AIAssistantPage() {
     <div className="min-h-screen bg-[#f8fafc] text-slate-700 font-sans">
       <div className="flex h-screen w-full bg-white overflow-hidden">
         
-        <aside className="w-64 border-r border-slate-200 bg-[#fcfdfe] flex flex-col hidden lg:flex">
+        {sidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+
+        <aside className={`w-64 border-r border-slate-200 bg-[#fcfdfe] flex flex-col fixed lg:relative inset-y-0 left-0 z-50 transition-transform duration-300 ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
           <div className="p-6">
              <div className="flex items-center gap-2 mb-8">
                 <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
@@ -100,7 +108,7 @@ export default function AIAssistantPage() {
                 </div>
                 <span className="font-bold text-slate-800 tracking-tight">AI Asistent</span>
              </div>
-             
+              
               <div className="space-y-1">
                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3 px-2">Recientes</p>
                  {recentChats.length > 0 ? (
@@ -166,14 +174,18 @@ export default function AIAssistantPage() {
         </aside>
 
         <div className="flex-1 flex flex-col relative">
-          {/* HEADER */}
-          <header className="flex items-center justify-between px-8 py-4 bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-10">
+          <header className="flex items-center justify-between px-4 md:px-8 py-4 bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-10">
+            <button 
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden p-2 hover:bg-slate-100 rounded-md mr-2"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
             <div>
               <h1 className="text-slate-800 text-lg font-bold">Asistente ERP Inteligente</h1>
             </div>
           </header>
 
-          {/* ÁREA DE CHAT */}
           <main className="flex-1 overflow-y-auto custom-scrollbar bg-[#f8fafc]/50">
             {messages.length === 0 ? (
               <div className="flex flex-col items-center justify-center min-h-full p-6 text-center">

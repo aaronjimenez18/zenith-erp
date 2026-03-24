@@ -28,13 +28,14 @@ export async function createProduct(formData: FormData) {
     const name = formData.get("name") as string;
     const sku = formData.get("sku") as string;
     const price = parseFloat(formData.get("price") as string);
+    const wholesalePrice = parseFloat(formData.get("wholesalePrice") as string) || 0;
     const purchasePrice = parseFloat(formData.get("purchasePrice") as string) || 0;
     const stock = parseInt(formData.get("stock") as string);
     const barcode = (formData.get("barcode") as string) || null;
     const imageUrl = (formData.get("imageUrl") as string) || null;
 
     await db.product.create({
-      data: { name, sku, price, purchasePrice, stock, barcode, imageUrl, businessId },
+      data: { name, sku, price, wholesalePrice, purchasePrice, stock, barcode, imageUrl, businessId },
     });
 
     revalidatePath("/dashboard/inventory");
@@ -52,6 +53,7 @@ export async function updateProduct(
     name?: string;
     sku?: string;
     price?: number;
+    wholesalePrice?: number;
     purchasePrice?: number;
     stock?: number;
     barcode?: string | null;

@@ -104,7 +104,7 @@ export async function POST(req: Request) {
         Math.floor(Math.random() * 10000);
 
       await db.product.create({
-        data: { name, sku, price, stock, businessId },
+        data: { name, sku, price, wholesalePrice: price * 0.85, stock, businessId },
       });
 
       return NextResponse.json({
@@ -129,7 +129,7 @@ export async function POST(req: Request) {
       await Promise.all([
         db.product.findMany({
           where: { businessId },
-          select: { name: true, stock: true, price: true },
+          select: { name: true, stock: true, price: true, wholesalePrice: true },
         }),
         db.sale.findMany({
           where: { businessId, createdAt: { gte: today } },

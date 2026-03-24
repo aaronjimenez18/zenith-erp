@@ -13,6 +13,7 @@ export async function GET() {
         name: true,
         sku: true,
         price: true,
+        wholesalePrice: true,
         stock: true
       }
     })

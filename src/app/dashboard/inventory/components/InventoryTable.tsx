@@ -32,6 +32,7 @@ export function InventoryTable({ products }: { products: Product[] }) {
       name: product.name,
       sku: product.sku,
       price: product.price,
+      wholesalePrice: product.wholesalePrice,
       purchasePrice: product.purchasePrice,
       stock: product.stock,
       barcode: product.barcode,
@@ -48,6 +49,7 @@ export function InventoryTable({ products }: { products: Product[] }) {
       name: editData.name,
       sku: editData.sku,
       price: editData.price,
+      wholesalePrice: editData.wholesalePrice,
       purchasePrice: editData.purchasePrice,
       stock: editData.stock,
       barcode: editData.barcode || null,
@@ -136,6 +138,7 @@ export function InventoryTable({ products }: { products: Product[] }) {
             <th className="px-4 py-3 text-left tracking-wider">SKU</th>
             <th className="px-4 py-3 text-left tracking-wider">Barras</th>
             <th className="px-4 py-3 text-right tracking-wider">P. Compra</th>
+            <th className="px-4 py-3 text-right tracking-wider">P. Mayoreo</th>
             <th className="px-4 py-3 text-right tracking-wider">P. Venta</th>
             <th className="px-4 py-3 text-right tracking-wider">Stock</th>
             <th className="px-4 py-3 text-center tracking-wider">Estado</th>
@@ -198,6 +201,20 @@ export function InventoryTable({ products }: { products: Product[] }) {
                       onChange={(e) =>
                         handleInputChange(
                           "purchasePrice",
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      className="w-20 border rounded px-2 py-1 text-sm text-right"
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={editData.wholesalePrice || 0}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "wholesalePrice",
                           parseFloat(e.target.value) || 0
                         )
                       }
@@ -280,6 +297,9 @@ export function InventoryTable({ products }: { products: Product[] }) {
                   </td>
                   <td className="px-4 py-3 text-right text-gray-600">
                     ${product.purchasePrice.toFixed(2)}
+                  </td>
+                  <td className="px-4 py-3 text-right text-gray-600">
+                    ${product.wholesalePrice.toFixed(2)}
                   </td>
                   <td className="px-4 py-3 text-right font-medium text-gray-900">
                     ${product.price.toFixed(2)}

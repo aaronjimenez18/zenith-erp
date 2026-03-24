@@ -1,13 +1,53 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { createProduct } from "../app/dashboard/inventory/actions";
 import { Upload, X } from "lucide-react";
+
+interface Margins {
+  profitMargin: number;
+  wholesaleMargin: number;
+}
 
 export default function ProductForm() {
   const [isOpen, setIsOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [margins, setMargins] = useState<Margins>({ profitMargin: 30, wholesaleMargin: 15 });
+  const [autoPrice, setAutoPrice] = useState(true);
+  const [autoWholesale, setAutoWholesale] = useState(true);
+  const [purchasePrice, setPurchasePrice] = useState("");
+  const [calculatedPrice, setCalculatedPrice] = useState("");
+  const [calculatedWholesale, setCalculatedWholesale] = useState("");
+
+  useEffect(() => {
+    if (isOpen) {
+      fetch("/api/business")
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.profitMargin !== undefined) {
+            setMargins({ profitMargin: data.profitMargin, wholesaleMargin: data.wholesaleMargin });
+          }
+        })
+        .catch(console.error);
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (purchasePrice && autoPrice) {
+      const pp = parseFloat(purchasePrice) || 0;
+      const price = pp * (1 + margins.profitMargin / 100);
+      setCalculatedPrice(price.toFixed(2));
+    }
+  }, [purchasePrice, margins.profitMargin, autoPrice]);
+
+  useEffect(() => {
+    if (purchasePrice && autoWholesale) {
+      const pp = parseFloat(purchasePrice) || 0;
+      const wholesale = pp * (1 + margins.wholesaleMargin / 100);
+      setCalculatedWholesale(wholesale.toFixed(2));
+    }
+  }, [purchasePrice, margins.wholesaleMargin, autoWholesale]);
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -48,6 +88,19 @@ export default function ProductForm() {
   const resetForm = () => {
     setImagePreview(null);
     setIsUploading(false);
+    setPurchasePrice("");
+    setCalculatedPrice("");
+    setCalculatedWholesale("");
+    setAutoPrice(true);
+    setAutoWholesale(true);
+  };
+
+  const handlePriceManualChange = () => {
+    setAutoPrice(false);
+  };
+
+  const handleWholesaleManualChange = () => {
+    setAutoWholesale(false);
   };
 
   return (
@@ -60,7 +113,7 @@ export default function ProductForm() {
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-bold">Agregar Nuevo Producto</h2>
@@ -125,28 +178,74 @@ export default function ProductForm() {
                 </div>
               </div>
 
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Precio de Compra
+                </label>
+                <input
+                  name="purchasePrice"
+                  type="number"
+                  step="0.01"
+                  value={purchasePrice}
+                  onChange={(e) => {
+                    setPurchasePrice(e.target.value);
+                    setAutoPrice(true);
+                    setAutoWholesale(true);
+                  }}
+                  className="w-full border rounded-md p-2"
+                  placeholder="0.00"
+                />
+                <p className="text-xs text-slate-500 mt-1">
+                  Al ingresar, se calculan automáticamente los precios de venta.
+                </p>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Precio de Venta
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-sm font-medium text-gray-700">
+                      Precio de Venta
+                    </label>
+                    {calculatedPrice && autoPrice && (
+                      <span className="text-xs text-emerald-600">
+                        +{margins.profitMargin}%
+                      </span>
+                    )}
+                  </div>
                   <input
                     name="price"
                     type="number"
                     step="0.01"
                     required
+                    value={autoPrice ? calculatedPrice : undefined}
+                    onChange={(e) => {
+                      handlePriceManualChange();
+                      const input = e.target;
+                      input.name = "price";
+                    }}
+                    onFocus={handlePriceManualChange}
                     className="w-full border rounded-md p-2"
                     placeholder="0.00"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Precio de Compra
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-sm font-medium text-gray-700">
+                      Precio Mayoreo
+                    </label>
+                    {calculatedWholesale && autoWholesale && (
+                      <span className="text-xs text-emerald-600">
+                        +{margins.wholesaleMargin}%
+                      </span>
+                    )}
+                  </div>
                   <input
-                    name="purchasePrice"
+                    name="wholesalePrice"
                     type="number"
                     step="0.01"
+                    value={autoWholesale ? calculatedWholesale : undefined}
+                    onChange={handleWholesaleManualChange}
+                    onFocus={handleWholesaleManualChange}
                     className="w-full border rounded-md p-2"
                     placeholder="0.00"
                   />

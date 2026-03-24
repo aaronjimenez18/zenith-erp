@@ -4,6 +4,7 @@ import { jwtVerify } from "jose";
 import { redirect } from "next/navigation";
 import { TrendingUp, Package, AlertCircle, History } from "lucide-react";
 import { TrendChart } from "@/components/TrendChart";
+import { MarginSettings } from "@/components/MarginSettings";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -130,6 +131,8 @@ export default async function DashboardPage() {
       </header>
 
       <TrendChart data={chartData} />
+
+      <MarginSettings />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
