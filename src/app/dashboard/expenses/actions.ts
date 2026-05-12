@@ -5,29 +5,6 @@ import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 
-const DEFAULT_EXPENSES = [
-  {
-    category: "Renta / Leasing",
-    description: "Pago mensual del local",
-    amount: 12000,
-  },
-  {
-    category: "Servicios (Luz, Agua, Internet)",
-    description: "Servicios básicos del mes",
-    amount: 2800,
-  },
-  {
-    category: "Software y Suscripciones",
-    description: "Suscripciones de herramientas SaaS",
-    amount: 1350,
-  },
-  {
-    category: "Marketing y Publicidad",
-    description: "Campana promocional en redes sociales",
-    amount: 2200,
-  },
-];
-
 async function getAuthData() {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
@@ -50,13 +27,6 @@ export async function seedDefaultExpenses() {
     if (existingCount > 0) {
       return { success: true, created: false };
     }
-
-    await db.expense.createMany({
-      data: DEFAULT_EXPENSES.map((expense) => ({
-        ...expense,
-        businessId,
-      })),
-    });
 
     revalidatePath("/dashboard/expenses");
     return { success: true, created: true };
