@@ -1,5 +1,5 @@
 import { db } from "@/lib/db";
-import POS from "@/components/POS";
+import POS from "@/components/pos";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import { redirect } from "next/navigation";

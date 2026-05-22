@@ -1,10 +1,10 @@
 import { db } from "@/lib/db";
 import { Product } from "@prisma/client";
-import ProductForm from "../../../components/ProductForm";
+import ProductForm from "../../../components/product-form";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import { redirect } from "next/navigation";
-import { InventoryTable } from "./components/InventoryTable";
+import { InventoryTable } from "./components/inventory-table";
 
 export default async function InventoryPage() {
   const cookieStore = await cookies();

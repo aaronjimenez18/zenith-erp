@@ -1,6 +1,6 @@
 // src/app/dashboard/layout.tsx
 import { Sidebar } from "@/components/sidebar";
-import { MobileHeader } from "@/components/MobileHeader";
+import { MobileHeader } from "@/components/mobile-header";
 
 export default function DashboardLayout({
   children,

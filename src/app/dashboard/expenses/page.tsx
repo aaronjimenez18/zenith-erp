@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import ExpenseForm from "../../../components/ExpenseForm";
+import ExpenseForm from "../../../components/expense-form";
 import { deleteExpense, seedDefaultExpenses } from "./actions";
 import { EXPENSE_CATEGORIES } from "./constants";
 

@@ -3,8 +3,8 @@ import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import { redirect } from "next/navigation";
 import { TrendingUp, Package, AlertCircle, History } from "lucide-react";
-import { TrendChart } from "@/components/TrendChart";
-import { MarginSettings } from "@/components/MarginSettings";
+import { TrendChart } from "@/components/trend-chart";
+import { MarginSettings } from "@/components/margin-settings";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
