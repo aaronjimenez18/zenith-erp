@@ -1,12 +1,18 @@
 import { db } from '@/lib/db'
 import { NextResponse } from 'next/server'
+import { getUserFromToken } from '@/lib/auth'
 
 export async function GET() {
   try {
-    // Trae todos los productos con stock > 0
+    const token = await getUserFromToken()
+    if (!token?.businessId) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 })
+    }
+
     const products = await db.product.findMany({
       where: {
-        stock: { gt: 0 } // opcional, si quieres mostrar solo los disponibles
+        businessId: token.businessId,
+        stock: { gt: 0 }
       },
       select: {
         id: true,

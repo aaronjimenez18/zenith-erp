@@ -13,15 +13,17 @@ export default function VerifyEmailContent() {
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
+    const controller = new AbortController();
+
     if (!token) {
       setStatus("error");
       setErrorMessage("Token no proporcionado");
-      return;
+      return () => controller.abort();
     }
 
     async function verifyEmail() {
       try {
-        const response = await fetch(`/api/auth/verify?token=${token}`);
+        const response = await fetch(`/api/auth/verify?token=${token}`, { signal: controller.signal });
         const data = await response.json();
 
         if (response.ok) {
@@ -31,44 +33,32 @@ export default function VerifyEmailContent() {
           }, 3000);
         } else {
           setStatus("error");
-          setErrorMessage(data.error || "Error al verificar el email");
+          setErrorMessage(data.error || "No se pudo verificar el correo.");
         }
-      } catch {
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
         setStatus("error");
-        setErrorMessage("Error de conexión");
+        setErrorMessage("No pudimos conectar con el servidor. Verifica tu internet.");
       }
     }
 
     verifyEmail();
+
+    return () => controller.abort();
   }, [token, router]);
 
   return (
-    <div style={{
-      minHeight: "100vh",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: "#f4f4f4",
-      padding: "16px"
-    }}>
-      <div style={{
-        backgroundColor: "white",
-        borderRadius: "12px",
-        padding: "40px",
-        boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-        width: "100%",
-        maxWidth: "420px",
-        textAlign: "center"
-      }}>
+    <div className="min-h-screen flex items-center justify-center bg-zinc-100 p-4">
+      <div className="bg-white rounded-3xl p-10 shadow-sm w-full max-w-sm text-center">
         {status === "loading" && (
           <>
-            <h2 style={{ marginBottom: "16px", color: "#333", fontSize: "24px", fontWeight: "bold" }}>
+            <h2 className="mb-4 text-slate-800 text-2xl font-bold">
               Verificando...
             </h2>
-            <p style={{ color: "#666", marginBottom: "24px" }}>
+            <p className="text-slate-500 mb-6">
               Por favor espera mientras verificamos tu correo electrónico...
             </p>
-            <div style={{ display: "flex", justifyContent: "center" }}>
+            <div className="flex justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
             </div>
           </>
@@ -76,32 +66,20 @@ export default function VerifyEmailContent() {
 
         {status === "success" && (
           <>
-            <div style={{
-              display: "flex",
-              justifyContent: "center",
-              marginBottom: "24px"
-            }}>
-              <div style={{
-                height: "64px",
-                width: "64px",
-                borderRadius: "50%",
-                backgroundColor: "#dcfce7",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}>
+            <div className="flex justify-center mb-6">
+              <div className="h-16 w-16 rounded-full bg-green-100 flex items-center justify-center">
                 <svg className="h-8 w-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
             </div>
-            <h2 style={{ marginBottom: "16px", color: "#333", fontSize: "24px", fontWeight: "bold" }}>
+            <h2 className="mb-4 text-slate-800 text-2xl font-bold">
               ¡Email Verificado!
             </h2>
-            <p style={{ color: "#666", marginBottom: "24px" }}>
+            <p className="text-slate-500 mb-6">
               Tu correo electrónico ha sido verificado exitosamente. Serás redirigido automáticamente en unos segundos.
             </p>
-            <Button asChild style={{ width: "100%", padding: "12px" }}>
+            <Button asChild className="w-full py-3">
               <Link href="/login">Ir a iniciar sesión</Link>
             </Button>
           </>
@@ -109,35 +87,23 @@ export default function VerifyEmailContent() {
 
         {status === "error" && (
           <>
-            <div style={{
-              display: "flex",
-              justifyContent: "center",
-              marginBottom: "24px"
-            }}>
-              <div style={{
-                height: "64px",
-                width: "64px",
-                borderRadius: "50%",
-                backgroundColor: "#fee2e2",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center"
-              }}>
+            <div className="flex justify-center mb-6">
+              <div className="h-16 w-16 rounded-full bg-red-100 flex items-center justify-center">
                 <svg className="h-8 w-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </div>
             </div>
-            <h2 style={{ marginBottom: "16px", color: "#333", fontSize: "24px", fontWeight: "bold" }}>
+            <h2 className="mb-4 text-slate-800 text-2xl font-bold">
               Error de Verificación
             </h2>
-            <p style={{ color: "#dc2626", marginBottom: "8px", fontWeight: "500" }}>
+            <p className="text-red-600 font-medium mb-2">
               {errorMessage}
             </p>
-            <p style={{ color: "#666", marginBottom: "24px" }}>
+            <p className="text-slate-500 mb-6">
               El enlace de verificación puede haber expirado o ser inválido.
             </p>
-            <Button asChild style={{ width: "100%", padding: "12px" }}>
+            <Button asChild className="w-full py-3">
               <Link href="/login">Ir a iniciar sesión</Link>
             </Button>
           </>

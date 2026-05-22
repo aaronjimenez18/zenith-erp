@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import ExpenseForm from "../../../components/expense-form";
 import { deleteExpense, seedDefaultExpenses } from "./actions";
 import { EXPENSE_CATEGORIES } from "./constants";
@@ -22,13 +22,9 @@ export default function ExpensesPage() {
   const [totalGastos, setTotalGastos] = useState(0);
   const [seedAttempted, setSeedAttempted] = useState(false);
 
-  useEffect(() => {
-    fetchExpenses();
-  }, []);
-
-  const fetchExpenses = async () => {
+  const fetchExpenses = useCallback(async (signal?: AbortSignal) => {
     try {
-      const res = await fetch("/api/expenses");
+      const res = await fetch("/api/expenses", { signal });
       if (res.ok) {
         const data = await res.json();
 
@@ -36,7 +32,7 @@ export default function ExpensesPage() {
           setSeedAttempted(true);
           const seedResult = await seedDefaultExpenses();
           if (seedResult?.success) {
-            const updatedRes = await fetch("/api/expenses");
+            const updatedRes = await fetch("/api/expenses", { signal });
             if (updatedRes.ok) {
               const updatedData = await updatedRes.json();
               setExpenses(updatedData);
@@ -57,15 +53,22 @@ export default function ExpensesPage() {
         );
         setTotalGastos(total);
       }
-    } catch (error) {
-      console.error("Error fetching expenses:", error);
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      console.error("Error fetching expenses:", err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [seedAttempted]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchExpenses(controller.signal);
+    return () => controller.abort();
+  }, [fetchExpenses]);
 
   const handleDelete = async (id: string) => {
-    if (confirm("Estas seguro de eliminar este gasto?")) {
+    if (confirm("¿Eliminar este gasto? No se puede deshacer.")) {
       await deleteExpense(id);
       fetchExpenses();
     }
@@ -94,32 +97,32 @@ export default function ExpensesPage() {
       Seguros: "bg-cyan-100 text-cyan-700",
       Impuestos: "bg-red-100 text-red-700",
       Mantenimiento: "bg-orange-100 text-orange-700",
-      "Materiales de Oficina": "bg-gray-100 text-gray-700",
+      "Materiales de Oficina": "bg-slate-100 text-slate-700",
       "Transporte y Logistica": "bg-teal-100 text-teal-700",
       "Software y Suscripciones": "bg-indigo-100 text-indigo-700",
       Capacitacion: "bg-emerald-100 text-emerald-700",
       "Comisiones Bancarias": "bg-slate-100 text-slate-700",
-      Otros: "bg-neutral-100 text-neutral-700",
+      Otros: "bg-slate-100 text-slate-700",
     };
-    return colors[category] || "bg-gray-100 text-gray-700";
+    return colors[category] || "bg-slate-100 text-slate-700";
   };
 
   if (loading) {
     return (
       <div className="p-6 flex items-center justify-center min-h-[400px]">
-        <div className="text-gray-500">Cargando gastos...</div>
+        <div className="text-slate-500">Cargando gastos...</div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-6 pt-20 md:pt-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="p-4 md:p-8 pt-20 md:pt-8 relative z-10">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">
             Gastos
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-slate-500 font-medium mt-1">
             Registra y gestiona los gastos de tu negocio.
           </p>
         </div>
@@ -128,24 +131,24 @@ export default function ExpensesPage() {
             setEditingExpense(null);
             setIsFormOpen(true);
           }}
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition font-medium"
+          className="bg-primary text-primary-foreground px-5 py-2.5 rounded-xl hover:opacity-90 transition-all font-bold shadow-sm"
         >
           + Nuevo Gasto
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 shadow-sm">
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="glass-card p-6 rounded-3xl relative overflow-hidden bg-white/40 border-white/50">
+          <p className="text-sm font-bold text-slate-500/80 uppercase tracking-wider">
             Total Gastos
           </p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
-            ${totalGastos.toFixed(2)}
-          </p>
+              <p className="text-3xl font-extrabold text-slate-800 mt-2 tabular-nums">
+                ${totalGastos.toFixed(2)}
+              </p>
         </div>
-        <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 shadow-sm">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Este Mes</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+        <div className="glass-card p-6 rounded-3xl relative overflow-hidden bg-white/40 border-white/50">
+          <p className="text-sm font-bold text-slate-500/80 uppercase tracking-wider">Este Mes</p>
+          <p className="text-3xl font-extrabold text-slate-800 mt-2">
             $
             {expenses
               .filter((e) => {
@@ -160,21 +163,21 @@ export default function ExpensesPage() {
               .toFixed(2)}
           </p>
         </div>
-        <div className="border rounded-lg p-4 bg-white dark:bg-gray-800 shadow-sm">
-          <p className="text-sm text-gray-500 dark:text-gray-400">Categorias</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">
+        <div className="glass-card p-6 rounded-3xl relative overflow-hidden bg-white/40 border-white/50">
+          <p className="text-sm font-bold text-slate-500/80 uppercase tracking-wider">Categorías</p>
+          <p className="text-3xl font-extrabold text-slate-800 mt-2">
             {new Set(expenses.map((e) => e.category)).size}
           </p>
         </div>
       </div>
 
-      <div className="flex gap-2 mb-4 flex-wrap">
+      <div className="flex gap-2 mb-6 flex-wrap">
         <button
           onClick={() => setFilter("all")}
-          className={`px-3 py-1 rounded-full text-sm font-medium transition ${
+          className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all shadow-sm ${
             filter === "all"
-              ? "bg-blue-600 text-white"
-              : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300"
+              ? "bg-slate-800 text-white shadow-sm"
+              : "bg-white/40 border border-white/50 text-slate-600 backdrop-blur-sm hover:bg-white/60"
           }`}
         >
           Todos
@@ -183,42 +186,38 @@ export default function ExpensesPage() {
           <button
             key={cat}
             onClick={() => setFilter(cat)}
-            className={`px-3 py-1 rounded-full text-sm font-medium transition ${
-              filter === cat
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300"
-            }`}
+              className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all shadow-sm ${
+                filter === cat
+                  ? "bg-slate-800 text-white shadow-sm"
+                  : "bg-white/40 border border-white/50 text-slate-600 backdrop-blur-sm hover:bg-white/60"
+              }`}
           >
             {cat}
           </button>
         ))}
       </div>
-
-      <div className="border rounded-lg overflow-hidden bg-white dark:bg-gray-800 shadow-sm">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-900 text-gray-500 text-xs uppercase font-medium">
+      <div className="glass-card rounded-3xl overflow-x-auto">
+        <table className="min-w-full divide-y divide-white/20">
+          <thead className="bg-white/30 backdrop-blur-md text-slate-600 text-xs uppercase font-extrabold">
             <tr>
-              <th className="px-6 py-3 text-left tracking-wider">Fecha</th>
-              <th className="px-6 py-3 text-left tracking-wider">Categoria</th>
-              <th className="px-6 py-3 text-left tracking-wider">
-                Descripcion
-              </th>
-              <th className="px-6 py-3 text-right tracking-wider">Monto</th>
-              <th className="px-6 py-3 text-center tracking-wider">Acciones</th>
+              <th className="px-3 md:px-6 py-4 text-left tracking-wider">Fecha</th>
+              <th className="px-3 md:px-6 py-4 text-left tracking-wider">Categoría</th>
+              <th className="px-3 md:px-6 py-4 text-left tracking-wider">Descripción</th>
+              <th className="px-3 md:px-6 py-4 text-right tracking-wider">Monto</th>
+              <th className="px-3 md:px-6 py-4 text-center tracking-wider">Acciones</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-800">
+          <tbody className="divide-y divide-white/20 bg-transparent">
             {filteredExpenses.length === 0 ? (
               <tr>
                 <td
                   colSpan={5}
-                  className="px-6 py-12 text-center text-gray-500"
+                  className="px-6 py-12 text-center text-slate-500 font-medium"
                 >
                   <div className="flex flex-col items-center">
-                    <span className="text-4xl mb-2"></span>
-                    <p>No hay gastos registrados aun.</p>
-                    <p className="text-sm">
-                      Haz clic en "+ Nuevo Gasto" para comenzar.
+                    <p>No hay gastos registrados aún.</p>
+                    <p className="text-sm opacity-80 mt-1">
+                      Haz clic en &quot;+ Nuevo Gasto&quot; para comenzar.
                     </p>
                   </div>
                 </td>
@@ -227,37 +226,37 @@ export default function ExpensesPage() {
               filteredExpenses.map((expense) => (
                 <tr
                   key={expense.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  className="hover:bg-white/40 transition-colors"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-500">
                     {formatDate(expense.createdAt)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 md:px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${getCategoryColor(expense.category)}`}
+                      className={`px-3 py-1 rounded-full text-xs font-bold border border-white/40 shadow-sm ${getCategoryColor(expense.category)}`}
                     >
                       {expense.category}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap font-medium text-gray-900 dark:text-white">
+                  <td className="px-3 md:px-6 py-4 whitespace-nowrap font-bold text-slate-800 truncate max-w-[120px] sm:max-w-xs">
                     {expense.description}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-gray-900 dark:text-white font-medium">
+                  <td className="px-3 md:px-6 py-4 whitespace-nowrap text-right text-slate-800 font-extrabold tabular-nums">
                     ${expense.amount.toFixed(2)}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-center">
+                  <td className="px-3 md:px-6 py-4 whitespace-nowrap text-center">
                     <button
                       onClick={() => {
                         setEditingExpense(expense);
                         setIsFormOpen(true);
                       }}
-                      className="text-blue-600 hover:text-blue-800 mr-3 text-sm font-medium"
+                      className="px-2 py-1 text-slate-500 hover:text-slate-700 mr-3 text-sm font-bold transition-colors"
                     >
                       Editar
                     </button>
                     <button
                       onClick={() => handleDelete(expense.id)}
-                      className="text-red-600 hover:text-red-800 text-sm font-medium"
+                      className="px-2 py-1 text-destructive/60 hover:text-destructive text-sm font-bold transition-colors"
                     >
                       Eliminar
                     </button>

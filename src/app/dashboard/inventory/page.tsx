@@ -35,20 +35,20 @@ export default async function InventoryPage() {
   });
 
   return (
-    <div className="p-4 md:p-6 pt-20 md:pt-6">
+    <div className="p-4 md:p-8 pt-20 md:pt-8 relative z-10">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+          <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">
             Inventario
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
+          <p className="text-sm text-slate-500 mt-1 font-medium">
             Gestiona los productos y niveles de stock de tu negocio.
           </p>
         </div>
         <ProductForm />
       </div>
 
-      <div className="border rounded-lg overflow-hidden bg-white shadow-sm">
+      <div className="glass-card rounded-3xl overflow-hidden">
         <InventoryTable products={products} />
       </div>
     </div>

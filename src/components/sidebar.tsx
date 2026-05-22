@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -36,43 +36,52 @@ const menuItems = [
 
 export function Sidebar() {
   const pathname = usePathname();
-  const [user, setUser] = useState<{ role: string; plan: string } | null>(null);
+  const [user, setUser] = useState<{ role: string; plan: string; businessName: string } | null>(null);
+
+  const fetchUser = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const res = await fetch("/api/auth/me", { signal });
+      if (res.ok) {
+        const data = await res.json();
+        setUser({ role: data.role, plan: data.plan, businessName: data.businessName });
+      }
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+      console.error("Error al cargar usuario en Sidebar");
+    }
+  }, []);
 
   useEffect(() => {
-    async function fetchUser() {
-      try {
-        const res = await fetch("/api/auth/me");
-        if (res.ok) {
-          const data = await res.json();
-          setUser(data);
-        }
-      } catch (error) {
-        console.error("Error al cargar usuario en Sidebar");
-      }
-    }
-    fetchUser();
-  }, []);
+    const controller = new AbortController();
+    fetchUser(controller.signal);
+    return () => controller.abort();
+  }, [fetchUser]);
 
   const currentRole = user?.role || "VENDEDOR";
   const currentPlan = user?.plan || "BASIC";
 
   return (
-    <div className="flex flex-col h-full w-64 bg-slate-900 text-slate-300 border-r border-slate-800">
+    <div className="flex flex-col h-full w-64 glass-sidebar text-slate-700">
       <div className="p-6">
-        <h2 className="text-2xl font-bold text-white tracking-tight">Zenith ERP</h2>
-        <div className="flex items-center gap-2 mt-1">
-          <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full border border-blue-500/30">
+          <h2 className="text-lg font-extrabold text-slate-800 tracking-tight flex items-center gap-3">
+            <div className="w-9 h-9 rounded-2xl bg-primary shadow-sm flex items-center justify-center text-white text-sm font-bold shrink-0">
+              {user?.businessName?.charAt(0).toUpperCase() || "Z"}
+            </div>
+            <span className="truncate">{user?.businessName || "Cargando..."}</span>
+          </h2>
+        <div className="flex items-center gap-2 mt-2 pl-12">
+          <span className="text-[10px] font-bold bg-white/60 text-slate-500 px-2.5 py-0.5 rounded-full border border-white/50 shadow-sm uppercase tracking-wider">
             {currentRole}
           </span>
           {currentPlan === "PREMIUM" && (
-            <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full border border-purple-500/30">
+            <span className="text-[10px] font-bold bg-slate-800/10 text-slate-600 px-2.5 py-0.5 rounded-full border border-white/50 shadow-sm uppercase tracking-wider">
               PRO
             </span>
           )}
         </div>
       </div>
 
-      <nav className="flex-1 px-4 space-y-1">
+      <nav className="flex-1 px-4 py-2 space-y-1.5">
         {menuItems.map((item) => {
           const hasRoleAccess = item.roles.includes(currentRole);
           const isLockedByPlan = item.premiumOnly && currentPlan === "BASIC";
@@ -86,38 +95,38 @@ export function Sidebar() {
               key={item.href}
               href={isLockedByPlan ? "#" : item.href}
               className={cn(
-                "flex items-center justify-between px-3 py-2 rounded-lg transition-all duration-200 group relative",
+                "flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all duration-300 group relative font-medium text-sm",
                 isActive
-                  ? "bg-blue-600 text-white"
+                  ? "bg-primary/10 text-primary font-semibold"
                   : isLockedByPlan 
                     ? "opacity-50 cursor-not-allowed grayscale" 
-                    : "hover:bg-slate-800 hover:text-white",
-                item.isAi && !isActive && !isLockedByPlan && "text-purple-400 hover:text-purple-300"
+                    : "hover:bg-white/40 hover:text-slate-900",
+                item.isAi && !isActive && !isLockedByPlan && "text-slate-500 hover:text-slate-700"
               )}
             >
               <div className="flex items-center gap-3">
                 <item.icon className={cn(
-                  "w-5 h-5",
-                  isActive ? "text-white" : item.isAi ? "text-purple-400" : "text-slate-400"
+                  "w-5 h-5 transition-colors",
+                  isActive ? "text-primary" : "text-slate-500 group-hover:text-slate-700"
                 )} />
-                <span className="font-medium">{item.name}</span>
+                <span>{item.name}</span>
               </div>
-              {isLockedByPlan && <Lock className="w-3 h-3 text-slate-500" />}
+              {isLockedByPlan && <Lock className="w-3.5 h-3.5 text-slate-400" />}
             </Link>
           );
         })}
       </nav>
 
-      <div className="p-4 border-t border-slate-800">
+      <div className="p-4 border-t border-white/40">
         <button 
           onClick={async () => {
             await fetch("/api/auth/logout", { method: "POST" });
             window.location.href = "/login";
           }}
-          className="flex items-center gap-3 px-3 py-2 w-full rounded-lg hover:bg-red-900/20 hover:text-red-400 transition-colors"
+          className="flex items-center gap-3 px-3.5 py-2.5 w-full rounded-xl hover:bg-white/50 text-slate-600 hover:text-slate-800 transition-colors font-medium text-sm"
         >
-          <LogOut className="w-5 h-5" />
-          <span className="font-medium">Cerrar Sesión</span>
+          <LogOut className="w-5 h-5 text-slate-500 transition-colors" />
+          <span>Cerrar Sesión</span>
         </button>
       </div>
     </div>

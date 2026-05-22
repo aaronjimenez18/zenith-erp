@@ -8,9 +8,11 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-screen bg-slate-50">
+    <div className="flex h-screen dashboard-bg overflow-hidden relative">
+      {/* Background ambient light effects */}
+
       {/* Sidebar - hidden on mobile, visible on md+ */}
-      <div className="hidden md:block">
+      <div className="hidden md:block z-20">
         <Sidebar />
       </div>
 

@@ -57,22 +57,22 @@ export default function ExpenseForm({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-900 p-6 rounded-lg shadow-xl w-full max-w-md">
-        <h2 className="text-xl font-bold mb-4 text-gray-900 dark:text-white">
+    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="glass-modal p-6 rounded-2xl w-full max-w-md">
+        <h2 className="text-xl font-bold mb-4 text-slate-800">
           {expense ? "Editar Gasto" : "Registrar Gasto"}
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-bold text-slate-600 mb-1">
               Categoría
             </label>
             <select
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               required
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full p-3 glass-input rounded-xl text-sm"
             >
               <option value="" disabled>
                 Selecciona una categoría
@@ -86,7 +86,7 @@ export default function ExpenseForm({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-bold text-slate-600 mb-1">
               Descripción
             </label>
             <input
@@ -94,13 +94,13 @@ export default function ExpenseForm({
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               required
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full p-3 glass-input rounded-xl text-sm"
               placeholder="Ej. Pago de renta marzo"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-bold text-slate-600 mb-1">
               Monto
             </label>
             <input
@@ -110,7 +110,7 @@ export default function ExpenseForm({
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               required
-              className="w-full border border-gray-300 dark:border-gray-600 rounded-md p-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+              className="w-full p-3 glass-input rounded-xl text-sm"
               placeholder="0.00"
             />
           </div>
@@ -119,7 +119,7 @@ export default function ExpenseForm({
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md"
+              className="px-4 py-2 text-slate-600 hover:bg-white/30 disabled:opacity-50 rounded-xl font-medium text-sm"
               disabled={isSubmitting}
             >
               Cancelar
@@ -127,7 +127,7 @@ export default function ExpenseForm({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:opacity-90 disabled:opacity-50 shadow-sm font-bold text-sm"
             >
               {isSubmitting
                 ? "Guardando..."

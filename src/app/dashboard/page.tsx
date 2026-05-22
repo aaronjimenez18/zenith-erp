@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import { redirect } from "next/navigation";
-import { TrendingUp, Package, AlertCircle, History } from "lucide-react";
+import { TrendingUp, Package, AlertCircle, History, ShoppingCart } from "lucide-react";
 import { TrendChart } from "@/components/trend-chart";
 import { MarginSettings } from "@/components/margin-settings";
 
@@ -112,144 +112,154 @@ export default async function DashboardPage() {
   });
 
   return (
-    <div className="min-h-screen bg-[#f8fafc] p-4 md:p-8 space-y-6 md:space-y-10 pt-20 md:pt-8">
-      <header className="flex justify-between items-end flex-col md:flex-row gap-4">
+    <div className="min-h-screen p-4 md:p-8 space-y-6 md:space-y-8 pt-20 md:pt-8 relative z-10">
+      <header className="flex justify-between items-end flex-col md:flex-row gap-3">
         <div>
-          <p className="text-sm font-medium text-slate-500 mb-1 capitalize">
+          <h1 className="text-3xl md:text-4xl font-extrabold text-slate-800 tracking-tight">
+            Hola, <span className="capitalize">{userName}</span>
+          </h1>
+          <p className="text-sm font-medium text-slate-500 mt-1">
             {new Date().toLocaleDateString("es-MX", {
               weekday: "long",
               day: "numeric",
               month: "long",
               year: "numeric",
-            })}
+            })}{" "}
           </p>
-          <h1 className="text-3xl font-bold text-slate-900 tracking-tight">
-            Hola, <span className="text-blue-600 capitalize">{userName}</span>
-          </h1>
-          <p className="text-sm text-gray-500 mt-1">Resumen de tu negocio.</p>
         </div>
       </header>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="glass-card p-5 sm:p-6 rounded-[22px] relative overflow-hidden">
+          <div className="flex justify-between items-start mb-3 sm:mb-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500/80">
+                Ventas Totales
+              </p>
+              <p className="text-3xl sm:text-4xl font-extrabold text-slate-800 mt-2 tabular-nums">
+                $
+                {(totalSales._sum.total || 0).toLocaleString("es-MX", {
+                  minimumFractionDigits: 2,
+                })}
+              </p>
+            </div>
+            <div className="p-2.5 sm:p-3 bg-primary/10 rounded-2xl backdrop-blur-sm text-primary border border-primary/20 shadow-sm">
+              <TrendingUp size={20} />
+            </div>
+          </div>
+          <p className="text-xs font-medium text-slate-400">
+            Acumulado histórico
+          </p>
+        </div>
+
+        <div className="glass-card p-5 sm:p-6 rounded-[22px] relative overflow-hidden">
+          <div className="flex justify-between items-start mb-3 sm:mb-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500/80">
+                Productos
+              </p>
+              <p className="text-3xl sm:text-4xl font-extrabold text-slate-800 mt-2 tabular-nums">{productsCount}</p>
+            </div>
+            <div className="p-2.5 sm:p-3 bg-primary/10 rounded-2xl backdrop-blur-sm text-primary border border-primary/20 shadow-sm">
+              <Package size={20} />
+            </div>
+          </div>
+          <p className="text-xs font-medium text-slate-400">Items registrados</p>
+        </div>
+
+        <div className="glass-card p-5 sm:p-6 rounded-[22px] relative overflow-hidden sm:col-span-2 md:col-span-1">
+          <div className="flex justify-between items-start mb-3 sm:mb-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500/80">
+                Alertas de Stock
+              </p>
+              <p className="text-3xl sm:text-4xl font-extrabold text-slate-800 mt-2 tabular-nums">
+                {lowStockProducts.length}{" "}
+                <span className="text-base sm:text-lg font-medium text-slate-400">Críticos</span>
+              </p>
+            </div>
+            <div className="p-2.5 sm:p-3 bg-destructive/10 rounded-2xl backdrop-blur-sm text-destructive border border-destructive/20 shadow-sm">
+              <AlertCircle size={20} />
+            </div>
+          </div>
+          <p className="text-xs font-medium text-slate-400">Requieren atención</p>
+        </div>
+      </div>
 
       <TrendChart data={chartData} />
 
       <MarginSettings />
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
-              Ventas Totales
-            </p>
-            <div className="p-2 bg-green-50 rounded-lg text-green-600">
-              <TrendingUp size={20} />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-slate-900">
-            $
-            {(totalSales._sum.total || 0).toLocaleString("es-MX", {
-              minimumFractionDigits: 2,
-            })}
-          </p>
-          <p className="text-xs text-green-600 mt-2 font-medium">
-            Acumulado histórico
-          </p>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
-              Productos
-            </p>
-            <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
-              <Package size={20} />
-            </div>
-          </div>
-          <p className="text-3xl font-bold text-slate-900">{productsCount}</p>
-          <p className="text-xs text-slate-400 mt-2">Items registrados</p>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-          <div className="flex justify-between items-start mb-4">
-            <p className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
-              Alertas de Stock
-            </p>
-            <div
-              className={`p-2 rounded-lg ${lowStockProducts.length > 0 ? "bg-red-50 text-red-600" : "bg-emerald-50 text-emerald-600"}`}
-            >
-              <AlertCircle size={20} />
-            </div>
-          </div>
-          <p
-            className={`text-3xl font-bold ${lowStockProducts.length > 0 ? "text-red-500" : "text-emerald-600"}`}
-          >
-            {lowStockProducts.length}{" "}
-            <span className="text-xl font-medium">Críticos</span>
-          </p>
-          <p className="text-xs text-slate-400 mt-2">Requieren atención</p>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Inventario */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100 flex items-center gap-2">
-            <div className="w-2 h-6 bg-red-500 rounded-full" />
-            <h2 className="text-lg font-bold text-slate-900">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
+        {/* Inventario en Riesgo */}
+        <div className="glass-card rounded-3xl overflow-x-auto">
+          <div className="p-4 sm:p-6 border-b border-white/40 bg-white/15">
+            <h2 className="text-base sm:text-lg font-semibold text-slate-800">
               Inventario en Riesgo
             </h2>
           </div>
-          <div className="p-6">
-            <div className="space-y-1">
-              {lowStockProducts.length === 0 ? (
-                <p className="text-slate-500 text-sm py-4 text-center">
-                  Todo el stock está al día.
-                </p>
-              ) : (
-                lowStockProducts.map((p) => (
+          <div className="p-4 sm:p-6">
+            {lowStockProducts.length === 0 ? (
+              <p className="text-slate-500 font-medium text-sm py-4 text-center">
+                Todo el stock está al día.
+              </p>
+            ) : (
+              <div className="space-y-1">
+                {lowStockProducts.map((p, i) => (
                   <div
                     key={p.id}
-                    className="flex justify-between items-center py-4 border-b border-slate-50 last:border-0"
+                    className="flex justify-between items-center py-3 sm:py-3.5 border-b border-white/40 last:border-0"
                   >
-                    <span className="font-medium text-slate-700">{p.name}</span>
-                    <span className="px-3 py-1 bg-red-50 text-red-700 rounded-full text-xs font-bold">
-                      {p.stock} unidades
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="w-5 text-xs font-bold text-slate-400 tabular-nums">
+                        {String(i + 1).padStart(2, "0")}
+                      </span>
+                      <span className="font-semibold text-slate-700 truncate">{p.name}</span>
+                    </div>
+                    <span className="px-3 py-1 bg-white/40 backdrop-blur-sm text-destructive rounded-full text-xs font-extrabold border border-white/40 shrink-0 tabular-nums">
+                      {p.stock} uds.
                     </span>
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Movimientos */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100 flex items-center gap-2">
-            <div className="w-2 h-6 bg-blue-500 rounded-full" />
-            <h2 className="text-lg font-bold text-slate-900">
+        {/* Últimos Movimientos - timeline style */}
+        <div className="glass-card rounded-3xl overflow-x-auto">
+          <div className="p-4 sm:p-6 border-b border-white/40 bg-white/15 flex items-center gap-3">
+            <div className="p-1.5 sm:p-2 bg-primary/10 rounded-xl text-primary">
+              <History size={16} />
+            </div>
+            <h2 className="text-base sm:text-lg font-semibold text-slate-800">
               Últimos Movimientos
             </h2>
           </div>
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             <div className="space-y-1">
               {recentSales.map((s) => (
-                <div
-                  key={s.id}
-                  className="flex justify-between items-center py-4 border-b border-slate-50 last:border-0"
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-full bg-slate-50 flex items-center justify-center text-slate-400">
-                      <History size={16} />
+                  <div
+                    key={s.id}
+                    className="flex justify-between items-center py-3 sm:py-3.5 border-b border-white/40 last:border-0"
+                  >
+                  <div className="flex items-center gap-4 min-w-0">
+                    <div className="w-9 h-9 rounded-xl bg-white/40 backdrop-blur-md border border-white/50 flex items-center justify-center text-slate-500 shadow-sm shrink-0">
+                      <ShoppingCart size={16} />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold text-slate-700">
-                        Venta Registrada
+                        Venta
                       </p>
-                      <p className="text-xs text-slate-400">
-                        {new Date(s.createdAt).toLocaleDateString()}
+                      <p className="text-xs font-medium text-slate-500">
+                        {new Date(s.createdAt).toLocaleDateString("es-MX", {
+                          day: "numeric",
+                          month: "short",
+                        })}
                       </p>
                     </div>
                   </div>
-                  <span className="text-sm font-bold text-slate-900">
+                  <span className="text-sm font-extrabold text-slate-700 bg-white/40 backdrop-blur-sm px-3 py-1 rounded-xl border border-white/40 shrink-0 tabular-nums">
                     +$
                     {(s.total || 0).toLocaleString("es-MX", {
                       minimumFractionDigits: 2,

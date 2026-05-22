@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { UserPlus, Trash2, User as UserIcon } from "lucide-react";
 
 interface User {
@@ -16,12 +16,20 @@ export default function UsersPage() {
   const [role, setRole] = useState("VENDEDOR");
   const [loading, setLoading] = useState(false);
 
-  const fetchUsers = async () => {
-    const res = await fetch("/api/users");
-    if (res.ok) setUsers(await res.json());
-  };
+  const fetchUsers = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const res = await fetch("/api/users", { signal });
+      if (res.ok) setUsers(await res.json());
+    } catch (err) {
+      if (err instanceof DOMException && err.name === "AbortError") return;
+    }
+  }, []);
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchUsers(controller.signal);
+    return () => controller.abort();
+  }, [fetchUsers]);
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +42,7 @@ export default function UsersPage() {
     if (res.ok) {
       setEmail(""); setPassword("");
       fetchUsers();
-      alert("Usuario creado con éxito");
+      alert("Usuario registrado correctamente.");
     } else {
       const data = await res.json();
       alert(data.error);
@@ -43,12 +51,12 @@ export default function UsersPage() {
   };
 
   const handleDelete = async (userId: string) => {
-    if (!confirm("¿Estás seguro de eliminar este usuario?")) return;
+    if (!confirm("¿Eliminar este usuario? No se puede deshacer.")) return;
     
     const res = await fetch(`/api/users?id=${userId}`, { method: "DELETE" });
     if (res.ok) {
       fetchUsers();
-      alert("Usuario eliminado");
+      alert("Usuario eliminado permanentemente.");
     } else {
       const data = await res.json();
       alert(data.error);
@@ -56,77 +64,77 @@ export default function UsersPage() {
   };
 
   return (
-    <div className="p-4 md:p-8 max-w-6xl mx-auto pt-20 md:pt-8">
+    <div className="p-4 md:p-8 max-w-6xl mx-auto pt-20 md:pt-8 relative z-10">
       <header className="mb-6 md:mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold text-slate-900">Gestión de Usuarios</h1>
-        <p className="text-slate-500 text-sm md:text-base">Administra los accesos de tus empleados</p>
+        <h1 className="text-2xl md:text-3xl font-extrabold text-slate-800">Gestión de Usuarios</h1>
+        <p className="text-slate-500 text-sm md:text-base font-medium mt-1">Administra los accesos de tus empleados</p>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
-        <div className="bg-white p-4 md:p-6 rounded-xl shadow-sm border border-slate-200 h-fit">
-          <h2 className="text-base md:text-lg font-semibold mb-4 flex items-center gap-2">
-            <UserPlus className="w-4 h-4 md:w-5 md:h-5 text-blue-600" /> Nuevo Usuario
+        <div className="glass-card p-6 rounded-3xl h-fit border-0">
+          <h2 className="text-base md:text-lg font-bold mb-4 flex items-center gap-2 text-slate-800">
+            <UserPlus className="w-5 h-5 text-slate-600" /> Nuevo Usuario
           </h2>
           <form onSubmit={handleCreate} className="space-y-3 md:space-y-4">
             <input
               type="email" placeholder="Correo electrónico" required
               value={email} onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-2.5 md:p-2 text-sm md:text-base border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full p-2.5 md:p-3 text-sm md:text-base glass-input rounded-xl"
             />
             <input
               type="password" placeholder="Contraseña" required
               value={password} onChange={(e) => setPassword(e.target.value)}
-              className="w-full p-2.5 md:p-2 text-sm md:text-base border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+              className="w-full p-2.5 md:p-3 text-sm md:text-base glass-input rounded-xl"
             />
             <select 
               value={role} onChange={(e) => setRole(e.target.value)}
-              className="w-full p-2.5 md:p-2 text-sm md:text-base border rounded-lg bg-white"
+              className="w-full p-2.5 md:p-3 text-sm md:text-base glass-input rounded-xl [&>option]:bg-white"
             >
               <option value="VENDEDOR">Vendedor</option>
               <option value="ADMIN">Administrador (Premium)</option>
             </select>
             <button
               disabled={loading}
-              className="w-full py-2.5 md:py-2 text-sm md:text-base bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 disabled:bg-slate-300 transition"
+              className="w-full py-2.5 md:py-3 text-sm md:text-base bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 disabled:opacity-50 transition-all mt-2 shadow-sm"
             >
               {loading ? "Creando..." : "Registrar Empleado"}
             </button>
           </form>
         </div>
 
-        <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="lg:col-span-2 glass-card rounded-3xl overflow-hidden border-0">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[400px]">
-              <thead className="bg-slate-50 border-b border-slate-200">
+              <thead className="bg-white/30 backdrop-blur-md border-b border-white/20">
                 <tr>
-                  <th className="p-3 md:p-4 font-semibold text-slate-700 text-sm">Usuario</th>
-                  <th className="p-3 md:p-4 font-semibold text-slate-700 text-sm">Rol</th>
-                  <th className="p-3 md:p-4 font-semibold text-slate-700 text-sm text-right">Acciones</th>
+                  <th className="p-4 font-bold text-slate-600 text-sm uppercase tracking-wider">Usuario</th>
+                  <th className="p-4 font-bold text-slate-600 text-sm uppercase tracking-wider">Rol</th>
+                  <th className="p-4 font-bold text-slate-600 text-sm text-right uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="bg-transparent">
                 {users.map((u) => (
-                  <tr key={u.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
-                    <td className="p-3 md:p-4">
-                      <div className="flex items-center gap-2 md:gap-3">
-                        <div className="w-7 h-7 md:w-8 md:h-8 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 flex-shrink-0">
-                          <UserIcon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+                  <tr key={u.id} className="border-b border-white/20 hover:bg-white/40 transition-colors">
+                    <td className="p-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 bg-white/50 backdrop-blur-sm rounded-xl flex items-center justify-center text-slate-500 flex-shrink-0 border border-white/60 shadow-sm">
+                          <UserIcon className="w-4 h-4" />
                         </div>
-                        <span className="text-slate-700 font-medium text-sm md:text-base truncate max-w-[150px] md:max-w-none">{u.email}</span>
+                        <span className="text-slate-800 font-bold text-sm md:text-base truncate max-w-[150px] md:max-w-none">{u.email}</span>
                       </div>
                     </td>
-                    <td className="p-3 md:p-4 text-sm">
-                      <span className={`px-2 py-1 md:px-3 md:py-1 rounded-full text-xs font-bold ${
-                        u.role === "SUPER_ADMIN" ? "bg-purple-100 text-purple-700" :
-                        u.role === "ADMIN" ? "bg-blue-100 text-blue-700" : "bg-green-100 text-green-700"
+                    <td className="p-4 text-sm">
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold border border-white/40 shadow-sm ${
+                        u.role === "SUPER_ADMIN" ? "bg-purple-100/80 text-purple-700" :
+                        u.role === "ADMIN" ? "bg-amber-100/80 text-amber-700" : "bg-emerald-100/80 text-emerald-700"
                       }`}>
                         {u.role}
                       </span>
                     </td>
-                    <td className="p-3 md:p-4 text-right">
+                    <td className="p-4 text-right">
                       {u.role !== "SUPER_ADMIN" && (
-                        <button onClick={() => handleDelete(u.id)} className="text-red-400 hover:text-red-600 p-1.5 md:p-2">
-                          <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
+                        <button onClick={() => handleDelete(u.id)} className="text-destructive/60 hover:text-destructive p-2 transition-colors" aria-label={`Eliminar ${u.email}`}>
+                          <Trash2 className="w-5 h-5" />
                         </button>
                       )}
                     </td>

@@ -21,16 +21,20 @@ export default function ProductForm() {
   const [calculatedWholesale, setCalculatedWholesale] = useState("");
 
   useEffect(() => {
-    if (isOpen) {
-      fetch("/api/business")
-        .then((res) => res.json())
-        .then((data) => {
-          if (data.profitMargin !== undefined) {
-            setMargins({ profitMargin: data.profitMargin, wholesaleMargin: data.wholesaleMargin });
-          }
-        })
-        .catch(console.error);
-    }
+    if (!isOpen) return;
+    const controller = new AbortController();
+    fetch("/api/business", { signal: controller.signal })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.profitMargin !== undefined) {
+          setMargins({ profitMargin: data.profitMargin, wholesaleMargin: data.wholesaleMargin });
+        }
+      })
+      .catch((err) => {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        console.error(err);
+      });
+    return () => controller.abort();
   }, [isOpen]);
 
   useEffect(() => {
@@ -75,11 +79,11 @@ export default function ProductForm() {
           imageInput.value = data.url;
         }
       } else {
-        alert(data.error || "Error al subir la imagen");
+        alert(data.error || "No se pudo subir la imagen. Verifica el formato e intenta de nuevo.");
       }
     } catch (error) {
       console.error("Upload error:", error);
-      alert("Error al subir la imagen");
+      alert("Error de conexión al subir la imagen.");
     } finally {
       setIsUploading(false);
     }
@@ -107,23 +111,24 @@ export default function ProductForm() {
     <>
       <button
         onClick={() => setIsOpen(true)}
-        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition font-medium"
+        className="bg-primary text-primary-foreground px-4 py-2 rounded-md hover:opacity-90 transition font-medium shadow-sm"
       >
         + Nuevo Producto
       </button>
 
       {isOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="glass-modal p-6 rounded-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Agregar Nuevo Producto</h2>
+              <h2 className="text-xl font-bold text-slate-800">Agregar Nuevo Producto</h2>
               <button
                 type="button"
                 onClick={() => {
                   setIsOpen(false);
                   resetForm();
                 }}
-                className="p-1 hover:bg-gray-100 rounded-md"
+                className="p-2 hover:bg-white/30 rounded-xl transition-colors text-slate-500"
+                aria-label="Cerrar"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -140,46 +145,46 @@ export default function ProductForm() {
               <input type="hidden" name="imageUrl" value={imagePreview || ""} />
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-slate-600 mb-1">
                   Nombre
                 </label>
                 <input
                   name="name"
                   type="text"
                   required
-                  className="w-full border rounded-md p-2"
+                  className="w-full p-3 glass-input rounded-xl text-sm"
                   placeholder="Ej. Producto A"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-bold text-slate-600 mb-1">
                     SKU
                   </label>
                   <input
                     name="sku"
                     type="text"
                     required
-                    className="w-full border rounded-md p-2"
+                    className="w-full p-3 glass-input rounded-xl text-sm"
                     placeholder="PROD-001"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-bold text-slate-600 mb-1">
                     Código de Barras
                   </label>
                   <input
                     name="barcode"
                     type="text"
-                    className="w-full border rounded-md p-2"
+                    className="w-full p-3 glass-input rounded-xl text-sm"
                     placeholder="123456789"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-slate-600 mb-1">
                   Precio de Compra
                 </label>
                 <input
@@ -192,7 +197,7 @@ export default function ProductForm() {
                     setAutoPrice(true);
                     setAutoWholesale(true);
                   }}
-                  className="w-full border rounded-md p-2"
+                  className="w-full p-3 glass-input rounded-xl text-sm"
                   placeholder="0.00"
                 />
                 <p className="text-xs text-slate-500 mt-1">
@@ -200,14 +205,14 @@ export default function ProductForm() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-sm font-medium text-gray-700">
+                    <label className="text-sm font-bold text-slate-600">
                       Precio de Venta
                     </label>
                     {calculatedPrice && autoPrice && (
-                      <span className="text-xs text-emerald-600">
+                      <span className="text-xs text-slate-500">
                         +{margins.profitMargin}%
                       </span>
                     )}
@@ -224,17 +229,17 @@ export default function ProductForm() {
                       input.name = "price";
                     }}
                     onFocus={handlePriceManualChange}
-                    className="w-full border rounded-md p-2"
+                    className="w-full p-3 glass-input rounded-xl text-sm"
                     placeholder="0.00"
                   />
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-1">
-                    <label className="text-sm font-medium text-gray-700">
+                    <label className="text-sm font-bold text-slate-600">
                       Precio Mayoreo
                     </label>
                     {calculatedWholesale && autoWholesale && (
-                      <span className="text-xs text-emerald-600">
+                      <span className="text-xs text-slate-500">
                         +{margins.wholesaleMargin}%
                       </span>
                     )}
@@ -246,48 +251,49 @@ export default function ProductForm() {
                     value={autoWholesale ? calculatedWholesale : undefined}
                     onChange={handleWholesaleManualChange}
                     onFocus={handleWholesaleManualChange}
-                    className="w-full border rounded-md p-2"
+                    className="w-full p-3 glass-input rounded-xl text-sm"
                     placeholder="0.00"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-slate-600 mb-1">
                   Stock Inicial
                 </label>
                 <input
                   name="stock"
                   type="number"
                   required
-                  className="w-full border rounded-md p-2"
+                  className="w-full p-3 glass-input rounded-xl text-sm"
                   placeholder="0"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-bold text-slate-600 mb-1">
                   Imagen del Producto
                 </label>
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 text-center">
+                <div className="border-2 border-dashed border-white/50 rounded-2xl p-4 text-center glass-card">
                   {imagePreview ? (
                     <div className="relative inline-block">
                       <img
                         src={imagePreview}
                         alt="Preview"
-                        className="max-h-32 mx-auto rounded-md"
+                        className="max-h-32 mx-auto rounded-xl"
                       />
                       <button
                         type="button"
                         onClick={() => setImagePreview(null)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
+                        className="absolute -top-2 -right-2 bg-slate-700 text-white rounded-full p-1.5 shadow-sm"
+                        aria-label="Eliminar imagen"
                       >
                         <X className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
                     <label className="cursor-pointer">
-                      <div className="flex flex-col items-center text-gray-500">
+                      <div className="flex flex-col items-center text-slate-500">
                         <Upload className="w-8 h-8 mb-2" />
                         <span className="text-sm">
                           {isUploading
@@ -314,14 +320,14 @@ export default function ProductForm() {
                     setIsOpen(false);
                     resetForm();
                   }}
-                  className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-md"
+                  className="px-4 py-2 text-slate-600 hover:bg-white/30 rounded-xl font-medium text-sm"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={isUploading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-xl hover:opacity-90 disabled:opacity-50 shadow-sm font-bold text-sm"
                 >
                   {isUploading ? "Subiendo..." : "Guardar Producto"}
                 </button>

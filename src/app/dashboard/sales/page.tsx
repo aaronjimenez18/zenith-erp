@@ -27,10 +27,10 @@ export default async function SalesPage() {
   });
 
   return (
-    <div className="p-4 md:p-6 pt-20 md:pt-6">
+    <div className="p-4 md:p-8 pt-20 md:pt-8 relative z-10">
       <header className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900">Punto de Venta</h1>
-        <p className="text-gray-500">
+        <h1 className="text-3xl font-extrabold text-slate-800">Punto de Venta</h1>
+        <p className="text-slate-500 font-medium text-sm mt-1">
           Registra ventas y descuenta stock automáticamente.
         </p>
       </header>

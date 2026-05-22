@@ -28,75 +28,74 @@ export default function LoginPage() {
         router.refresh();
       } else {
         if (data.emailNotVerified) {
-          alert("Email no verificado. Por favor revisa tu correo y verifica tu cuenta antes de iniciar sesión.");
+          alert("Correo no verificado. Revisa tu bandeja de entrada y verifica tu cuenta antes de iniciar sesión.");
         } else {
-          alert(data.error || "Credenciales incorrectas");
+          alert(data.error || "Correo o contraseña incorrectos.");
         }
       }
     } catch (error) {
       console.error("Error en el login:", error);
-      alert("Hubo un error al intentar iniciar sesión");
+      alert("Error de conexión. Verifica tu internet e intenta de nuevo.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div style={{
-      display: "flex", justifyContent: "center", alignItems: "center",
-      height: "100vh", backgroundColor: "#f4f4f4", fontFamily: "sans-serif"
-    }}>
-      <form onSubmit={handleLogin} style={{
-        display: "flex", flexDirection: "column", gap: "15px",
-        padding: "35px", backgroundColor: "white", borderRadius: "8px",
-        boxShadow: "0 4px 6px rgba(0,0,0,0.1)", width: "320px",
-      }}>
-        <h1 style={{ textAlign: "center", margin: "0", color: "#333" }}>BIENVENIDO</h1>
-        <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-          <label style={{ fontSize: "12px", fontWeight: "bold", color: "#555" }}>CORREO</label>
-          <input
-            type="email"
-            placeholder="correo@ejemplo.com"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={{ padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }}
-          />
+    <div className="min-h-screen flex items-center justify-center bg-zinc-100 relative overflow-hidden">
+      <div className="absolute top-[-15%] left-[-10%] w-[50%] h-[50%] rounded-full bg-zinc-200/40 blur-[150px] pointer-events-none" />
+      <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] rounded-full bg-zinc-300/30 blur-[150px] pointer-events-none" />
+
+      <div className="glass-card p-10 rounded-[28px] w-full max-w-sm relative z-10">
+        <div className="flex flex-col items-center mb-8">
+          <div className="w-12 h-12 rounded-[14px] bg-primary shadow-sm flex items-center justify-center text-white text-lg font-bold mb-4">
+            Z
+          </div>
+          <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Zenith ERP</h1>
+          <p className="text-sm text-slate-500 font-medium mt-1">Inicia sesión en tu cuenta</p>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-          <label style={{ fontSize: "12px", fontWeight: "bold", color: "#555" }}>CONTRASEÑA</label>
-          <input
-            type="password"
-            placeholder="••••••••"
-            
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={{ padding: "10px", borderRadius: "4px", border: "1px solid #ccc" }}
-          />
-        </div>
+        <form onSubmit={handleLogin} className="space-y-5">
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Correo</label>
+            <input
+              type="email"
+              placeholder="correo@ejemplo.com"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full p-3 glass-input rounded-xl text-sm"
+            />
+          </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            padding: "12px", backgroundColor: loading ? "#ccc" : "#0070f3",
-            color: "white", border: "none", borderRadius: "4px",
-            cursor: loading ? "not-allowed" : "pointer", fontWeight: "bold",
-            fontSize: "16px", marginTop: "5px"
-          }}
-        >
-          {loading ? "Validando..." : "Entrar a mi cuenta"}
-        </button>
+          <div className="space-y-2">
+            <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Contraseña</label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full p-3 glass-input rounded-xl text-sm"
+            />
+          </div>
 
-        <p style={{ textAlign: "center", fontSize: "13px", color: "#666" }}>
-          ¿Eres nuevo?{" "}
-          <a href="/register" style={{ color: "#0070f3", textDecoration: "none", fontWeight: "bold" }}>
-            Registra tu negocio
-          </a>
-        </p>
-      </form>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 disabled:opacity-50 transition-all text-sm shadow-sm"
+          >
+            {loading ? "Validando..." : "Entrar a mi cuenta"}
+          </button>
+
+          <p className="text-center text-sm text-slate-500 font-medium">
+            ¿Eres nuevo?{" "}
+            <a href="/register" className="text-slate-800 font-bold hover:underline">
+              Registra tu negocio
+            </a>
+          </p>
+        </form>
+      </div>
     </div>
   );
 }

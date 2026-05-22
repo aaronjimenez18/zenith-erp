@@ -11,7 +11,7 @@ export default function ProductList({ products, addToCart }: Props) {
         <div key={p.id} className="flex justify-between mb-1 p-2 border">
           <span>{p.name}</span>
           <span>${p.price}</span>
-          <button onClick={() => addToCart(p)} className="bg-blue-500 text-white px-2 rounded">
+          <button onClick={() => addToCart(p)} className="bg-primary text-primary-foreground px-2 rounded">
             +
           </button>
         </div>
