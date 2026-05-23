@@ -108,7 +108,7 @@ export default function AIAssistantPage() {
         <div className="flex-1 flex flex-col relative z-10 pt-16 md:pt-0">
           <header className="flex items-center justify-between px-4 md:px-8 py-4 bg-white/30 backdrop-blur-xl border-b border-white/40 sticky top-0 z-10 hidden md:flex">
             <div>
-              <h1 className="text-slate-800 text-xl font-extrabold">Inteligencia Artificial para tu negocio</h1>
+              <h1 className="text-slate-800 text-xl font-extrabold">Asistente IA</h1>
             </div>
           </header>
 
@@ -187,7 +187,7 @@ export default function AIAssistantPage() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && sendMessage()}
-                  placeholder="Escribe tu consulta al ERP..."
+                  placeholder="Escribe tu consulta a la IA..."
                   className="flex-1 bg-transparent py-4 text-base font-medium text-slate-800 placeholder:text-slate-500 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-400 rounded-xl"
                 />
                 <button
