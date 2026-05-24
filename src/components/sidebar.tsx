@@ -13,6 +13,7 @@ import {
   LogOut,
   Sparkles,
   Lock,
+  CreditCard,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -31,6 +32,7 @@ const menuItems = [
     roles: ["SUPER_ADMIN", "ADMIN"] 
   },
   { name: "Usuarios", href: "/dashboard/users", icon: Users, roles: ["SUPER_ADMIN"] },
+  { name: "Suscripción", href: "/dashboard/suscripcion", icon: CreditCard, roles: ["SUPER_ADMIN"] },
   { name: "Configuración", href: "/dashboard/settings", icon: Settings, roles: ["SUPER_ADMIN", "ADMIN"] },
 ];
 

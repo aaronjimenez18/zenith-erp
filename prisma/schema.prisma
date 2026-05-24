@@ -18,16 +18,21 @@ enum Role {
 }
 
 model Business {
-  id             String    @id @default(cuid())
-  name           String
-  plan           Plan      @default(BASIC)
-  profitMargin   Float     @default(30)
-  wholesaleMargin Float   @default(15)
-  users          User[]
-  products       Product[]
-  sales          Sale[]
-  expenses       Expense[]
-  createdAt      DateTime  @default(now())
+  id                  String         @id @default(cuid())
+  name                String
+  plan                Plan           @default(BASIC)
+  profitMargin        Float          @default(30)
+  wholesaleMargin     Float          @default(15)
+  stripeCustomerId    String?        @unique
+  stripeSubscriptionId String?       @unique
+  subscriptionStatus  String?
+  trialEnd            DateTime?
+  subscriptionEnd     DateTime?
+  users               User[]
+  products            Product[]
+  sales               Sale[]
+  expenses            Expense[]
+  createdAt           DateTime       @default(now())
 }
 
 model User {

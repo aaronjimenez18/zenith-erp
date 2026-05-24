@@ -1,10 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
 import Lenis from "lenis";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { LandingScrollContext } from "./landing-scroll-context";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -15,19 +14,10 @@ export function LandingScrollProvider({
 }) {
   const lenisRef = useRef<Lenis | null>(null);
 
-  const setScrollLocked = useCallback((locked: boolean) => {
-    const lenis = lenisRef.current;
-    if (!lenis) return;
-    if (locked) {
-      lenis.scrollTo(0, { immediate: true });
-      lenis.stop();
-    } else {
-      lenis.start();
-      requestAnimationFrame(() => ScrollTrigger.refresh());
-    }
-  }, []);
-
   useEffect(() => {
+    history.scrollRestoration = "manual";
+    window.scrollTo(0, 0);
+
     const reduced = window.matchMedia(
       "(prefers-reduced-motion: reduce)",
     ).matches;
@@ -39,6 +29,7 @@ export function LandingScrollProvider({
       touchMultiplier: 1.5,
     });
     lenisRef.current = lenis;
+    lenis.scrollTo(0, { immediate: true });
 
     lenis.on("scroll", ScrollTrigger.update);
 
@@ -65,8 +56,6 @@ export function LandingScrollProvider({
     gsap.ticker.add(onTick);
     gsap.ticker.lagSmoothing(0);
 
-    lenis.stop();
-
     const onRefresh = () => lenis.resize();
     ScrollTrigger.addEventListener("refresh", onRefresh);
 
@@ -84,9 +73,5 @@ export function LandingScrollProvider({
     };
   }, []);
 
-  return (
-    <LandingScrollContext.Provider value={{ setScrollLocked }}>
-      {children}
-    </LandingScrollContext.Provider>
-  );
+  return <>{children}</>;
 }

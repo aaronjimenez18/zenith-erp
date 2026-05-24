@@ -359,7 +359,7 @@ export default function SettingsPage() {
             </span>
             {businessPlan === "BASIC" && (
               <Link
-                href="/pricing"
+                href="/dashboard/suscripcion"
                 className="block mt-2 text-xs font-bold text-primary hover:underline"
               >
                 Ver planes disponibles →
