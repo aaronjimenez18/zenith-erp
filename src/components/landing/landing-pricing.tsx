@@ -1,9 +1,14 @@
+"use client";
+
 import Link from "next/link";
+import { useState } from "react";
 import { Check } from "lucide-react";
 import { PLANS } from "./constants";
 import { ScrollReveal } from "./scroll-reveal";
 
 export function LandingPricing() {
+  const [annual, setAnnual] = useState(false);
+
   return (
     <section id="precios" className="bg-[#f5f4f0] px-4 py-24 md:px-10 md:py-32">
       <div className="mx-auto max-w-6xl">
@@ -24,7 +29,38 @@ export function LandingPricing() {
           </div>
         </ScrollReveal>
 
-        <div className="mx-auto mt-16 grid max-w-5xl gap-6 md:grid-cols-3">
+        {/* Toggle Mensual / Anual */}
+        <div className="mt-10 flex items-center justify-center">
+          <div className="inline-flex items-center rounded-full border border-[#e3e2df] bg-white p-1 shadow-sm">
+            <button
+              onClick={() => setAnnual(false)}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition-all ${
+                !annual
+                  ? "bg-[#134235] text-white shadow-sm"
+                  : "text-[#717975] hover:text-[#1b1c1a]"
+              }`}
+            >
+              Mensual
+            </button>
+            <button
+              onClick={() => setAnnual(true)}
+              className={`rounded-full px-5 py-2 text-sm font-semibold transition-all ${
+                annual
+                  ? "bg-[#134235] text-white shadow-sm"
+                  : "text-[#717975] hover:text-[#1b1c1a]"
+              }`}
+            >
+              Anual
+            </button>
+          </div>
+          {annual && (
+            <span className="ml-3 text-xs font-semibold text-[#2d5a4c]">
+              Ahorra hasta 2 meses
+            </span>
+          )}
+        </div>
+
+        <div className="mx-auto mt-12 grid max-w-5xl gap-6 md:grid-cols-3">
           {PLANS.map((plan, i) => (
             <ScrollReveal key={plan.id} from="up" delay={i * 0.08} distance={32} scrub>
               <article
@@ -41,15 +77,29 @@ export function LandingPricing() {
                 )}
                 <h3 className="text-lg font-bold tracking-[-0.01em]">{plan.name}</h3>
                 <div className="mt-4 mb-2">
-                  {plan.price ? (
-                    <>
-                      <span className="text-4xl font-bold tabular-nums tracking-[-0.02em]">
-                        ${plan.price}
-                      </span>
-                      <span className={plan.highlighted ? "text-white/60" : "text-[#717975]"}>
-                        /mes
-                      </span>
-                    </>
+                  {plan.monthlyPrice ? (
+                    annual ? (
+                      <>
+                        <span className="text-4xl font-bold tabular-nums tracking-[-0.02em]">
+                          ${plan.annualPrice}
+                        </span>
+                        <span className={plan.highlighted ? "text-white/60" : "text-[#717975]"}>
+                          /año
+                        </span>
+                        <div className={`mt-1 text-xs font-medium ${plan.highlighted ? "text-white/70" : "text-[#2d5a4c]"}`}>
+                          ${plan.monthlyPrice}/mes al pagar anual
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-4xl font-bold tabular-nums tracking-[-0.02em]">
+                          ${plan.monthlyPrice}
+                        </span>
+                        <span className={plan.highlighted ? "text-white/60" : "text-[#717975]"}>
+                          /mes
+                        </span>
+                      </>
+                    )
                   ) : (
                     <span className="text-3xl font-bold">Personalizado</span>
                   )}
@@ -78,7 +128,7 @@ export function LandingPricing() {
                   </a>
                 ) : (
                   <Link
-                    href={`/register?plan=${plan.id}`}
+                    href={`/register?plan=${plan.id}&interval=${annual ? "annual" : "month"}`}
                     className={`block rounded-full py-3 text-center text-sm font-semibold transition-all duration-300 hover:scale-[1.02] ${
                       plan.highlighted
                         ? "bg-white text-[#134235] hover:shadow-xl"

@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const verified = searchParams.get("verified");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -27,11 +29,7 @@ export default function LoginPage() {
         router.push("/dashboard");
         router.refresh();
       } else {
-        if (data.emailNotVerified) {
-          alert("Correo no verificado. Revisa tu bandeja de entrada y verifica tu cuenta antes de iniciar sesión.");
-        } else {
-          alert(data.error || "Correo o contraseña incorrectos.");
-        }
+        alert(data.error || "Correo o contraseña incorrectos.");
       }
     } catch (error) {
       console.error("Error en el login:", error);
@@ -47,6 +45,12 @@ export default function LoginPage() {
       <div className="absolute bottom-[-15%] right-[-10%] w-[50%] h-[50%] rounded-full bg-zinc-300/30 blur-[150px] pointer-events-none" />
 
       <div className="glass-card p-10 rounded-[28px] w-full max-w-sm relative z-10">
+        {verified && (
+          <div className="mb-6 rounded-xl bg-green-50 border border-green-200 px-4 py-3 text-center">
+            <p className="text-sm font-semibold text-green-800">¡Cuenta lista!</p>
+            <p className="text-xs text-green-600 mt-0.5">Tu suscripción está activa. Inicia sesión para comenzar.</p>
+          </div>
+        )}
         <div className="flex flex-col items-center mb-8">
           <div className="w-12 h-12 rounded-[14px] bg-primary shadow-sm flex items-center justify-center text-white text-lg font-bold mb-4">
             Z
@@ -97,5 +101,17 @@ export default function LoginPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-zinc-100">
+        <div className="text-slate-500">Cargando...</div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   );
 }

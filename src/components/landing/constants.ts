@@ -100,14 +100,16 @@ export const PLANS = [
   {
     id: "BASIC",
     name: "Básico",
-    price: "300",
+    monthlyPrice: "300",
+    annualPrice: "3,000",
+    annualLabel: "$3,000/año (ahorra 2 meses)",
     description: "Ideal para emprendedores que están empezando.",
     features: [
       "Productos ilimitados",
       "Inventario y ventas",
       "Gastos y dashboard",
       "Hasta 3 usuarios VENDEDOR",
-      "10 días de prueba gratis",
+      "14 días de prueba gratis",
     ],
     highlighted: false,
     cta: "Empezar prueba gratis",
@@ -115,14 +117,16 @@ export const PLANS = [
   {
     id: "PREMIUM",
     name: "Premium",
-    price: "800",
+    monthlyPrice: "800",
+    annualPrice: "8,000",
+    annualLabel: "$8,000/año (ahorra 2 meses)",
     description: "Para negocios que necesitan potencia e inteligencia.",
     features: [
       "Todo lo del plan Básico",
       "Asistente con IA",
       "Hasta 3 usuarios ADMIN",
       "Gestión de gastos avanzada",
-      "10 días de prueba gratis",
+      "14 días de prueba gratis",
     ],
     highlighted: true,
     badge: "MÁS VENDIDO",
@@ -131,7 +135,9 @@ export const PLANS = [
   {
     id: "ENTERPRISE",
     name: "Enterprise",
-    price: null,
+    monthlyPrice: null,
+    annualPrice: null,
+    annualLabel: null,
     description: "Solución a medida para operaciones de gran escala.",
     features: [
       "Usuarios ilimitados",

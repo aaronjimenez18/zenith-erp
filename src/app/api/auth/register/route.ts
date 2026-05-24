@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
 import { db } from "@/lib/db";
-import { sendVerificationEmail } from "@/lib/email";
+import { stripe } from "@/lib/stripe";
+import { getOrCreatePriceIds } from "@/lib/stripe-products";
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { businessName, name, email, password, plan } = body;
+    const { businessName, name, email, password, plan, interval } = body;
 
     if (!email || !password || !name || !businessName) {
       return NextResponse.json({ error: "Faltan campos" }, { status: 400 });
@@ -15,33 +15,62 @@ export async function POST(req: Request) {
 
     const normalizedEmail = email.toLowerCase();
     const hashedPassword = await bcrypt.hash(password, 10);
-    const verificationToken = crypto.randomUUID();
-    const tokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const selectedPlan = plan === "PREMIUM" ? "PREMIUM" : "BASIC";
 
     const business = await db.business.create({
       data: {
         name: businessName,
-        plan: plan === "PREMIUM" ? "PREMIUM" : "BASIC",
+        plan: selectedPlan,
         users: {
           create: {
-            name: name,
+            name,
             email: normalizedEmail,
             password: hashedPassword,
             role: "SUPER_ADMIN",
-            verificationToken,
-            verificationTokenExpiry: tokenExpiry,
+            emailVerified: new Date(),
           },
         },
       },
       select: { id: true },
     });
 
-    await sendVerificationEmail(normalizedEmail, verificationToken, name);
+    const prices = await getOrCreatePriceIds();
+    const selectedInterval = interval === "annual" ? "annual" : "monthly";
+    const priceId = prices[selectedPlan]?.[selectedInterval];
+
+    let checkoutUrl: string | null = null;
+
+    if (priceId) {
+      const customer = await stripe.customers.create({
+        email: normalizedEmail,
+        name,
+        metadata: { businessId: business.id },
+      });
+
+      await db.business.update({
+        where: { id: business.id },
+        data: { stripeCustomerId: customer.id },
+      });
+
+      const session = await stripe.checkout.sessions.create({
+        customer: customer.id,
+        mode: "subscription",
+        line_items: [{ price: priceId, quantity: 1 }],
+        subscription_data: {
+          trial_period_days: 14,
+          metadata: { businessId: business.id, plan: selectedPlan },
+        },
+        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/login?verified=true`,
+        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/register?canceled=true`,
+      });
+
+      checkoutUrl = session.url;
+    }
 
     return NextResponse.json({
       success: true,
-      message: "Usuario creado. Por favor verifica tu correo electrónico.",
-      emailSent: true,
+      message: "Cuenta creada. Redirigiendo a pago...",
+      checkoutUrl,
     }, { status: 201 });
 
   } catch (error) {

@@ -44,8 +44,6 @@ model User {
   businessId               String
   business                 Business  @relation(fields: [businessId], references: [id])
   emailVerified            DateTime?
-  verificationToken        String?
-  verificationTokenExpiry  DateTime?
 }
 
 model Product {
