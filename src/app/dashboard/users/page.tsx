@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { UserPlus, Trash2, User as UserIcon } from "lucide-react";
+import { toast } from "sonner";
 
 interface User {
   id: string;
@@ -42,10 +43,10 @@ export default function UsersPage() {
     if (res.ok) {
       setEmail(""); setPassword("");
       fetchUsers();
-      alert("Usuario registrado correctamente.");
+      toast.success("Usuario registrado correctamente.");
     } else {
       const data = await res.json();
-      alert(data.error);
+      toast.error("Error al registrar", { description: data.error });
     }
     setLoading(false);
   };
@@ -56,10 +57,10 @@ export default function UsersPage() {
     const res = await fetch(`/api/users?id=${userId}`, { method: "DELETE" });
     if (res.ok) {
       fetchUsers();
-      alert("Usuario eliminado permanentemente.");
+      toast.success("Usuario eliminado permanentemente.");
     } else {
       const data = await res.json();
-      alert(data.error);
+      toast.error("Error al eliminar", { description: data.error });
     }
   };
 
@@ -71,7 +72,7 @@ export default function UsersPage() {
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-8">
-        <div className="glass-card p-6 rounded-3xl h-fit border-0">
+        <div className="glass-card p-6 h-fit">
           <h2 className="text-base md:text-lg font-bold mb-4 flex items-center gap-2 text-slate-800">
             <UserPlus className="w-5 h-5 text-slate-600" /> Nuevo Usuario
           </h2>
@@ -102,31 +103,31 @@ export default function UsersPage() {
           </form>
         </div>
 
-        <div className="lg:col-span-2 glass-card rounded-3xl overflow-hidden border-0">
+        <div className="lg:col-span-2 glass-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[400px]">
-              <thead className="bg-white/30 backdrop-blur-md border-b border-white/20">
+              <thead className="bg-slate-50 border-b border-[#e3e2df]">
                 <tr>
                   <th className="p-4 font-bold text-slate-600 text-sm uppercase tracking-wider">Usuario</th>
                   <th className="p-4 font-bold text-slate-600 text-sm uppercase tracking-wider">Rol</th>
                   <th className="p-4 font-bold text-slate-600 text-sm text-right uppercase tracking-wider">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="bg-transparent">
+              <tbody>
                 {users.map((u) => (
-                  <tr key={u.id} className="border-b border-white/20 hover:bg-white/40 transition-colors">
+                  <tr key={u.id} className="border-b border-[#e3e2df] hover:bg-slate-50 transition-colors">
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 bg-white/50 backdrop-blur-sm rounded-xl flex items-center justify-center text-slate-500 flex-shrink-0 border border-white/60 shadow-sm">
+                        <div className="w-9 h-9 bg-slate-100 rounded-xl flex items-center justify-center text-slate-500 flex-shrink-0">
                           <UserIcon className="w-4 h-4" />
                         </div>
                         <span className="text-slate-800 font-bold text-sm md:text-base truncate max-w-[150px] md:max-w-none">{u.email}</span>
                       </div>
                     </td>
                     <td className="p-4 text-sm">
-                      <span className={`px-3 py-1 rounded-full text-xs font-bold border border-white/40 shadow-sm ${
-                        u.role === "SUPER_ADMIN" ? "bg-purple-100/80 text-purple-700" :
-                        u.role === "ADMIN" ? "bg-amber-100/80 text-amber-700" : "bg-emerald-100/80 text-emerald-700"
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
+                        u.role === "SUPER_ADMIN" ? "bg-purple-100 text-purple-700" :
+                        u.role === "ADMIN" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"
                       }`}>
                         {u.role}
                       </span>

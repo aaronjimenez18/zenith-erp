@@ -11,9 +11,9 @@ function ModuleCard({ mod, index }: { mod: ModuleItem; index: number }) {
   const Icon = mod.icon;
   return (
     <ScrollReveal from="up" delay={index * 0.08} distance={24} scrub>
-      <article className="group rounded-[20px] border border-[#e3e2df] bg-white p-6 transition-all duration-500 hover:-translate-y-1 hover:shadow-xl">
-        <div className={`mb-4 flex size-11 items-center justify-center rounded-[14px] ${accentStyles[mod.accent]}`}>
-          <Icon className="size-5" />
+      <article className="group relative rounded-[20px] border border-white/50 bg-white/60 p-6 shadow-lg shadow-black/[0.02] backdrop-blur-2xl transition-all duration-500 hover:-translate-y-1 hover:border-[#134235]/20 hover:bg-white/90 hover:shadow-xl">
+        <div className={`relative mb-4 flex size-11 items-center justify-center rounded-[14px] transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg ${accentStyles[mod.accent]}`}>
+          <Icon className="size-5 transition-all duration-500 group-hover:scale-110 group-hover:rotate-3" />
         </div>
         <h3 className="text-base font-bold tracking-[-0.01em] text-[#1b1c1a]">{mod.title}</h3>
         <p className="mt-2 text-sm font-medium leading-relaxed text-[#404945]">
@@ -30,7 +30,7 @@ function ModuleHeader() {
       <p className="text-xs font-bold uppercase tracking-[0.1em] text-[#2d5a4c]">
         Una plataforma, infinitas posibilidades
       </p>
-      <h2 className="mt-4 text-[clamp(1.75rem,4vw,3rem)] font-bold leading-[1.1] tracking-[-0.02em] text-[#1b1c1a]">
+      <h2 className="font-display mt-4 text-[clamp(1.75rem,4vw,3rem)] font-bold leading-[1.1] tracking-[-0.02em] text-[#1b1c1a]">
         Cada área de tu negocio
         <br />
         <span className="text-gradient-organic">merece orden</span>

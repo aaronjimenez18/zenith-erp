@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import {
   createExpense,
   updateExpense,
@@ -28,6 +29,14 @@ export default function ExpenseForm({
   const [description, setDescription] = useState(expense?.description || "");
   const [amount, setAmount] = useState(expense?.amount?.toString() || "");
 
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    document.addEventListener("keydown", handler);
+    return () => document.removeEventListener("keydown", handler);
+  }, [onClose]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -46,10 +55,14 @@ export default function ExpenseForm({
       }
 
       if (result?.success) {
+        toast.success(expense ? "Gasto actualizado" : "Gasto registrado");
         onSuccess?.();
         onClose();
+      } else {
+        toast.error(result?.error || "Error al guardar el gasto");
       }
     } catch (error) {
+      toast.error("Error al guardar el gasto");
       console.error("Error submitting expense:", error);
     } finally {
       setIsSubmitting(false);
@@ -57,7 +70,10 @@ export default function ExpenseForm({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50">
+    <div
+      className="fixed inset-0 bg-black/30 backdrop-blur-sm flex items-center justify-center z-50"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
       <div className="glass-modal p-6 rounded-2xl w-full max-w-md">
         <h2 className="text-xl font-bold mb-4 text-slate-800">
           {expense ? "Editar Gasto" : "Registrar Gasto"}
@@ -65,10 +81,11 @@ export default function ExpenseForm({
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-bold text-slate-600 mb-1">
+            <label htmlFor="exp-category" className="block text-sm font-bold text-slate-600 mb-1">
               Categoría
             </label>
             <select
+              id="exp-category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               required
@@ -86,10 +103,11 @@ export default function ExpenseForm({
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-slate-600 mb-1">
+            <label htmlFor="exp-desc" className="block text-sm font-bold text-slate-600 mb-1">
               Descripción
             </label>
             <input
+              id="exp-desc"
               type="text"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
@@ -100,10 +118,11 @@ export default function ExpenseForm({
           </div>
 
           <div>
-            <label className="block text-sm font-bold text-slate-600 mb-1">
+            <label htmlFor="exp-amount" className="block text-sm font-bold text-slate-600 mb-1">
               Monto
             </label>
             <input
+              id="exp-amount"
               type="number"
               step="0.01"
               min="0"

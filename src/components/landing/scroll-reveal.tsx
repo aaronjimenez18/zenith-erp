@@ -29,6 +29,13 @@ export function ScrollReveal({
     const el = ref.current;
     if (!el) return;
 
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) {
+      el.style.opacity = "1";
+      el.style.transform = "none";
+      return;
+    }
+
     const fromVars: gsap.TweenVars = {
       opacity: 0,
       ease: "power4.out",

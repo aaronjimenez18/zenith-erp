@@ -1,11 +1,22 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Menu, X } from "lucide-react";
 import { Sidebar } from "@/components/sidebar";
 
 export function MobileHeader() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === "Escape") setIsSidebarOpen(false);
+  }, []);
+
+  useEffect(() => {
+    if (isSidebarOpen) {
+      document.addEventListener("keydown", handleKeyDown);
+      return () => document.removeEventListener("keydown", handleKeyDown);
+    }
+  }, [isSidebarOpen, handleKeyDown]);
 
   return (
     <>
@@ -34,7 +45,12 @@ export function MobileHeader() {
             className="absolute inset-0 bg-slate-900/30 backdrop-blur-sm"
             onClick={() => setIsSidebarOpen(false)}
           />
-          <div className="absolute left-0 top-0 bottom-0 w-72 bg-white shadow-2xl border-r border-white/30 animate-in slide-in-from-left duration-300">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Menú de navegación"
+            className="absolute left-0 top-0 bottom-0 w-72 bg-white shadow-2xl border-r border-white/30 animate-in slide-in-from-left duration-300"
+          >
             <button
               onClick={() => setIsSidebarOpen(false)}
               className="absolute top-3 right-3 p-2 text-slate-500 hover:bg-slate-100 rounded-xl transition-colors z-50 bg-white/80 backdrop-blur-sm"

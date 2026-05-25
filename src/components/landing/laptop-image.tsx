@@ -11,7 +11,7 @@ export function LaptopImage() {
         className="absolute -bottom-3 left-1/2 h-3 w-[65%] -translate-x-1/2 rounded-full bg-[#134235]/15 blur-[6px]"
         aria-hidden
       />
-      <div className="relative animate-float">
+      <div className="relative motion-safe:animate-float">
         <Image
           src="/landing/zenith-laptop.webp"
           alt="Zenith ERP"

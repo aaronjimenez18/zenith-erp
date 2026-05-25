@@ -2,8 +2,10 @@
 
 import { useState, useMemo } from "react";
 import { Product } from "@prisma/client";
-import { Pencil, Trash2, Check, X, ImageIcon, Search } from "lucide-react";
+import { Pencil, Trash2, Check, X, ImageIcon, Search, PackageSearch } from "lucide-react";
 import { updateProduct, deleteProduct } from "../actions";
+import { toast } from "sonner";
+import { useDebounce } from "@/hooks/use-debounce";
 
 type ProductWithEditable = Product & {
   isEditing?: boolean;
@@ -13,7 +15,8 @@ export function InventoryTable({ products }: { products: Product[] }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editData, setEditData] = useState<Partial<Product>>({});
   const [localProducts, setLocalProducts] = useState<ProductWithEditable[]>(products);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const searchTerm = useDebounce(searchInput, 250);
 
   const filteredProducts = useMemo(() => {
     if (!searchTerm) return localProducts;
@@ -65,8 +68,9 @@ export function InventoryTable({ products }: { products: Product[] }) {
       );
       setEditingId(null);
       setEditData({});
+      toast.success("Producto actualizado");
     } else {
-      alert(result.error || "No se pudo guardar. Verifica los datos e intenta de nuevo.");
+      toast.error("Error al guardar", { description: result.error || "Verifica los datos e intenta de nuevo." });
     }
   };
 
@@ -77,8 +81,9 @@ export function InventoryTable({ products }: { products: Product[] }) {
 
     if (result.success) {
       setLocalProducts((prev) => prev.filter((p) => p.id !== productId));
+      toast.success("Producto eliminado");
     } else {
-      alert(result.error || "No se pudo eliminar el producto. Intenta de nuevo.");
+      toast.error("Error al eliminar", { description: result.error || "Intenta de nuevo." });
     }
   };
 
@@ -91,13 +96,16 @@ export function InventoryTable({ products }: { products: Product[] }) {
 
   if (filteredProducts.length === 0) {
     return (
-      <div className="px-6 py-12 text-center text-slate-500">
-        <div className="flex flex-col items-center">
-          <p>{searchTerm ? "No se encontraron productos." : "No hay productos registrados aún."}</p>
+      <div className="px-6 py-16 text-center">
+        <div className="flex flex-col items-center gap-3">
+          <PackageSearch className="size-12 text-slate-300" />
+          <p className="text-sm font-semibold text-slate-500">
+            {searchTerm ? "No se encontraron productos con ese criterio." : "No hay productos registrados aún."}
+          </p>
           {searchTerm && (
             <button
-              onClick={() => setSearchTerm("")}
-              className="mt-2 text-slate-600 hover:underline"
+              onClick={() => setSearchInput("")}
+              className="text-sm font-bold text-[#134235] hover:underline"
             >
               Limpiar búsqueda
             </button>
@@ -109,19 +117,19 @@ export function InventoryTable({ products }: { products: Product[] }) {
 
   return (
     <div>
-      <div className="p-4 border-b border-white/40 bg-white/20">
+      <div className="p-4 border-b border-[#e3e2df]">
         <div className="relative max-w-md">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <input
             type="text"
             placeholder="Buscar por nombre, SKU o código de barras..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 glass-input rounded-xl text-sm"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 glass-input text-sm"
           />
-          {searchTerm && (
+          {searchInput && (
             <button
-              onClick={() => setSearchTerm("")}
+              onClick={() => setSearchInput("")}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                     aria-label="Limpiar búsqueda"
                   >
@@ -131,8 +139,8 @@ export function InventoryTable({ products }: { products: Product[] }) {
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-white/20">
-        <thead className="bg-white/30 backdrop-blur-md text-slate-500 text-xs uppercase font-bold">
+        <table className="min-w-full divide-y divide-[#e3e2df]">
+        <thead className="bg-slate-50 text-slate-500 text-xs uppercase font-bold">
           <tr>
             <th className="px-4 py-3.5 pl-6 text-left tracking-wider">Imagen</th>
             <th className="px-4 py-3.5 text-left tracking-wider">Nombre</th>
@@ -146,11 +154,11 @@ export function InventoryTable({ products }: { products: Product[] }) {
             <th className="px-3 py-3.5 pr-6 text-center tracking-wider">Acciones</th>
           </tr>
         </thead>
-        <tbody className="divide-y divide-white/20 bg-transparent">
+        <tbody className="divide-y divide-[#e3e2df]">
           {filteredProducts.map((product) => (
             <tr
               key={product.id}
-              className="hover:bg-white/40 transition-colors"
+              className="hover:bg-slate-50 transition-colors"
             >
               <td className="px-4 py-3 pl-6">
                 {product.imageUrl ? (
@@ -160,7 +168,7 @@ export function InventoryTable({ products }: { products: Product[] }) {
                     className="h-10 w-10 rounded-md object-cover"
                   />
                 ) : (
-                  <div className="h-10 w-10 rounded-md bg-white/30 backdrop-blur-sm border border-white/40 flex items-center justify-center">
+                  <div className="h-10 w-10 rounded-md bg-slate-100 flex items-center justify-center">
                     <ImageIcon className="w-5 h-5 text-slate-400" />
                   </div>
                 )}
@@ -173,7 +181,7 @@ export function InventoryTable({ products }: { products: Product[] }) {
                       type="text"
                       value={editData.name || ""}
                       onChange={(e) => handleInputChange("name", e.target.value)}
-                      className="w-full border border-white/40 bg-white/30 rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-slate-400 transition-colors"
+                      className="w-full border border-[#e3e2df] bg-white rounded-lg px-2.5 py-1.5 text-sm outline-none focus:border-[#134235]/50 transition-colors"
                     />
                   </td>
                   <td className="px-3 py-3">
@@ -181,7 +189,7 @@ export function InventoryTable({ products }: { products: Product[] }) {
                       type="text"
                       value={editData.sku || ""}
                       onChange={(e) => handleInputChange("sku", e.target.value)}
-                      className="w-24 border border-white/40 bg-white/30 rounded-lg px-2 py-1.5 text-sm font-mono outline-none focus:border-slate-400 transition-colors"
+                      className="w-24 border border-[#e3e2df] bg-white rounded-lg px-2 py-1.5 text-sm font-mono outline-none focus:border-[#134235]/50 transition-colors"
                     />
                   </td>
                   <td className="px-3 py-3">
@@ -191,7 +199,7 @@ export function InventoryTable({ products }: { products: Product[] }) {
                       onChange={(e) =>
                         handleInputChange("barcode", e.target.value)
                       }
-                      className="w-28 border border-white/40 bg-white/30 rounded-lg px-2 py-1.5 text-sm font-mono outline-none focus:border-slate-400 transition-colors"
+                      className="w-28 border border-[#e3e2df] bg-white rounded-lg px-2 py-1.5 text-sm font-mono outline-none focus:border-[#134235]/50 transition-colors"
                     />
                   </td>
                   <td className="px-4 py-3">
@@ -205,7 +213,7 @@ export function InventoryTable({ products }: { products: Product[] }) {
                           parseFloat(e.target.value) || 0
                         )
                       }
-                      className="w-20 border border-white/40 bg-white/30 rounded-lg px-2 py-1.5 text-sm text-right outline-none focus:border-slate-400 transition-colors"
+                      className="w-20 border border-[#e3e2df] bg-white rounded-lg px-2 py-1.5 text-sm text-right outline-none focus:border-[#134235]/50 transition-colors"
                     />
                   </td>
                   <td className="px-4 py-3">
@@ -219,7 +227,7 @@ export function InventoryTable({ products }: { products: Product[] }) {
                           parseFloat(e.target.value) || 0
                         )
                       }
-                      className="w-20 border border-white/40 bg-white/30 rounded-lg px-2 py-1.5 text-sm text-right outline-none focus:border-slate-400 transition-colors"
+                      className="w-20 border border-[#e3e2df] bg-white rounded-lg px-2 py-1.5 text-sm text-right outline-none focus:border-[#134235]/50 transition-colors"
                     />
                   </td>
                   <td className="px-4 py-3">
@@ -233,7 +241,7 @@ export function InventoryTable({ products }: { products: Product[] }) {
                           parseFloat(e.target.value) || 0
                         )
                       }
-                      className="w-20 border border-white/40 bg-white/30 rounded-lg px-2 py-1.5 text-sm text-right outline-none focus:border-slate-400 transition-colors"
+                      className="w-20 border border-[#e3e2df] bg-white rounded-lg px-2 py-1.5 text-sm text-right outline-none focus:border-[#134235]/50 transition-colors"
                     />
                   </td>
                   <td className="px-3 py-3">
@@ -246,7 +254,7 @@ export function InventoryTable({ products }: { products: Product[] }) {
                           parseInt(e.target.value) || 0
                         )
                       }
-                      className="w-16 border border-white/40 bg-white/30 rounded-lg px-2 py-1.5 text-sm text-right outline-none focus:border-slate-400 transition-colors"
+                      className="w-16 border border-[#e3e2df] bg-white rounded-lg px-2 py-1.5 text-sm text-right outline-none focus:border-[#134235]/50 transition-colors"
                     />
                   </td>
                   <td className="px-3 py-3 text-center">
@@ -331,7 +339,7 @@ export function InventoryTable({ products }: { products: Product[] }) {
                     <div className="flex justify-center gap-1">
                       <button
                         onClick={() => startEdit(product)}
-                        className="p-1.5 text-slate-500 hover:bg-white/30 rounded-md transition-colors"
+                        className="p-1.5 text-slate-500 hover:bg-slate-100 rounded-md transition-colors"
                         title="Editar"
                         aria-label={`Editar ${product.name}`}
                       >

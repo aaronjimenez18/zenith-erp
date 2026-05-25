@@ -4,6 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CreditCard, Loader2, CheckCircle2 } from "lucide-react";
 import { PLANS } from "@/components/landing/constants";
+import { useUser } from "@/contexts/user-context";
 
 type BillingInfo = {
   plan: string;
@@ -14,6 +15,7 @@ type BillingInfo = {
 };
 
 function SuscripcionContent() {
+  const { user, refresh } = useUser();
   const [billing, setBilling] = useState<BillingInfo | null>(null);
   const [loading, setLoading] = useState(true);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
@@ -21,28 +23,26 @@ function SuscripcionContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const fetchBilling = useCallback(async () => {
-    try {
-      const res = await fetch("/api/auth/me");
-      const data = await res.json();
-      setBilling(data);
-    } catch {
-      console.error("Error fetching billing info");
-    } finally {
+  // Set billing from cached user once available
+  useEffect(() => {
+    if (user) {
+      setBilling({
+        plan: user.plan,
+        subscriptionStatus: user.subscriptionStatus,
+        stripeCustomerId: user.stripeCustomerId,
+        trialEnd: null,
+        subscriptionEnd: null,
+      });
       setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     if (searchParams.get("success")) {
-      fetchBilling();
+      refresh();
       router.replace("/dashboard/suscripcion");
     }
-  }, [searchParams, fetchBilling, router]);
-
-  useEffect(() => {
-    fetchBilling();
-  }, [fetchBilling]);
+  }, [searchParams, refresh, router]);
 
   const handleCheckout = async (plan: string, interval: string) => {
     setCheckoutLoading(`${plan}-${interval}`);
@@ -109,22 +109,22 @@ function SuscripcionContent() {
   const isTrialing = billing?.subscriptionStatus === "trialing";
 
   return (
-    <div className="mx-auto max-w-4xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-[#1b1c1a]">
+    <div className="p-4 md:p-8 pt-20 md:pt-8 relative z-10 space-y-6 md:space-y-8">
+      <header>
+        <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">
           Suscripción
         </h1>
-        <p className="mt-1 text-sm text-[#717975]">
+        <p className="text-sm text-slate-500 font-medium mt-1">
           Gestiona tu plan y facturación
         </p>
-      </div>
+      </header>
 
       {/* Plan actual */}
-      <div className="rounded-2xl border border-[#e3e2df] bg-white p-6">
+      <div className="glass-card p-5 sm:p-6">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium text-[#717975]">Plan actual</p>
-            <p className="mt-1 text-2xl font-bold text-[#1b1c1a]">
+            <p className="text-sm font-medium text-slate-500">Plan actual</p>
+            <p className="mt-1 text-2xl font-bold text-slate-800">
               {currentPlan === "PREMIUM" ? "Premium" : "Básico"}
             </p>
             <div className="mt-2 flex items-center gap-2">
@@ -154,7 +154,7 @@ function SuscripcionContent() {
             <button
               onClick={handlePortal}
               disabled={portalLoading}
-              className="rounded-xl border border-[#e3e2df] bg-white px-4 py-2 text-sm font-medium text-[#404945] transition-all hover:bg-gray-50 hover:shadow-sm disabled:opacity-50"
+              className="rounded-xl border border-[#e3e2df] bg-white px-4 py-2 text-sm font-medium text-slate-700 transition-all hover:bg-slate-50 hover:shadow-sm disabled:opacity-50"
             >
               {portalLoading ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -173,10 +173,8 @@ function SuscripcionContent() {
           return (
             <div
               key={plan.id}
-              className={`relative rounded-2xl border p-6 transition-all ${
-                isCurrent
-                  ? "border-[#134235] bg-[#134235]/5"
-                  : "border-[#e3e2df] bg-white hover:shadow-md"
+              className={`relative rounded-2xl border p-6 transition-all bg-white ${
+                isCurrent ? "border-[#134235] ring-1 ring-[#134235]/20" : "border-[#e3e2df] hover:shadow-md"
               }`}
             >
               {plan.highlighted && (
@@ -185,7 +183,7 @@ function SuscripcionContent() {
                 </span>
               )}
 
-              <h3 className="text-lg font-bold text-[#1b1c1a]">{plan.name}</h3>
+              <h3 className="text-lg font-bold text-slate-800">{plan.name}</h3>
 
               <div className="mt-4 space-y-2">
                 <button
@@ -212,7 +210,7 @@ function SuscripcionContent() {
                 {plan.features.map((f) => (
                   <li
                     key={f}
-                    className="flex items-center gap-2 text-xs text-[#717975]"
+                    className="flex items-center gap-2 text-xs text-slate-500"
                   >
                     <CheckCircle2 className="size-3.5 text-[#2d5a4c]" />
                     {f}

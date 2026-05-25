@@ -7,8 +7,8 @@ export const PLANS = [
     id: "BASIC",
     name: "Básico",
     description: "Ideal para emprendedores que están empezando.",
-    monthlyPrice: 30000, // $300.00 in cents
-    annualPrice: 300000, // $3,000.00 in cents
+    monthlyPrice: 30000, // $300.00 MXN in cents
+    annualPrice: 300000, // $3,000.00 MXN in cents
     features: [
       "Productos ilimitados",
       "Inventario y ventas",
@@ -20,8 +20,8 @@ export const PLANS = [
     id: "PREMIUM",
     name: "Premium",
     description: "Para negocios que necesitan potencia e inteligencia.",
-    monthlyPrice: 80000, // $800.00 in cents
-    annualPrice: 800000, // $8,000.00 in cents
+    monthlyPrice: 80000, // $800.00 MXN in cents
+    annualPrice: 800000, // $8,000.00 MXN in cents
     features: [
       "Todo lo del plan Básico",
       "Asistente con IA",
@@ -43,7 +43,7 @@ async function createProductAndPrices(plan: typeof PLANS[number]) {
   const monthly = await stripe.prices.create({
     product: product.id,
     unit_amount: plan.monthlyPrice,
-    currency: "usd",
+    currency: "mxn",
     recurring: { interval: "month", trial_period_days: TRIAL_DAYS },
     metadata: { app_id: "zenith-erp", plan: plan.id, interval: "month" },
   });
@@ -51,7 +51,7 @@ async function createProductAndPrices(plan: typeof PLANS[number]) {
   const annual = await stripe.prices.create({
     product: product.id,
     unit_amount: plan.annualPrice,
-    currency: "usd",
+    currency: "mxn",
     recurring: { interval: "year", trial_period_days: TRIAL_DAYS },
     metadata: { app_id: "zenith-erp", plan: plan.id, interval: "year" },
   });

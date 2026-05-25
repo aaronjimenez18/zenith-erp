@@ -32,7 +32,7 @@ export async function GET() {
 
     const business = await db.business.findUnique({
       where: { id: businessId },
-      select: { name: true, plan: true, profitMargin: true, wholesaleMargin: true },
+      select: { name: true, plan: true, marginsEnabled: true, profitMargin: true, wholesaleMargin: true },
     });
 
     if (!business) {
@@ -62,6 +62,12 @@ export async function PUT(req: Request) {
       }
       data.name = body.name.trim();
     }
+    if (body.marginsEnabled !== undefined) {
+      if (typeof body.marginsEnabled !== "boolean") {
+        return NextResponse.json({ error: "Valor inválido para márgenes" }, { status: 400 });
+      }
+      data.marginsEnabled = body.marginsEnabled;
+    }
     if (body.profitMargin !== undefined) {
       if (typeof body.profitMargin !== "number") {
         return NextResponse.json({ error: "Margen de ganancia inválido" }, { status: 400 });
@@ -82,7 +88,7 @@ export async function PUT(req: Request) {
     const business = await db.business.update({
       where: { id: businessId },
       data,
-      select: { name: true, plan: true, profitMargin: true, wholesaleMargin: true },
+      select: { name: true, plan: true, marginsEnabled: true, profitMargin: true, wholesaleMargin: true },
     });
 
     return NextResponse.json(business);

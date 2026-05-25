@@ -1,16 +1,17 @@
 "use server";
 
-import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
+import { env } from "@/lib/env";
+import { ExpenseService } from "@/lib/services/expense.service";
 
 async function getAuthData() {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   if (!token) throw new Error("No estas autenticado");
 
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+  const secret = new TextEncoder().encode(env.JWT_SECRET);
   const { payload } = await jwtVerify(token, secret);
 
   return {
@@ -22,9 +23,10 @@ async function getAuthData() {
 export async function seedDefaultExpenses() {
   try {
     const { businessId } = await getAuthData();
-    const existingCount = await db.expense.count({ where: { businessId } });
+    const service = new ExpenseService(businessId);
+    const existing = await service.list();
 
-    if (existingCount > 0) {
+    if (existing.length > 0) {
       return { success: true, created: false };
     }
 
@@ -39,13 +41,12 @@ export async function seedDefaultExpenses() {
 export async function createExpense(formData: FormData) {
   try {
     const { businessId } = await getAuthData();
+    const service = new ExpenseService(businessId);
 
-    const description = formData.get("description") as string;
-    const amount = parseFloat(formData.get("amount") as string);
-    const category = formData.get("category") as string;
-
-    await db.expense.create({
-      data: { description, amount, category, businessId },
+    await service.create({
+      description: formData.get("description") as string,
+      amount: parseFloat(formData.get("amount") as string) || 0,
+      category: formData.get("category") as string,
     });
 
     revalidatePath("/dashboard/expenses");
@@ -58,16 +59,16 @@ export async function createExpense(formData: FormData) {
 
 export async function updateExpense(id: string, formData: FormData) {
   try {
-    await getAuthData();
+    const { businessId } = await getAuthData();
+    const service = new ExpenseService(businessId);
 
-    const description = formData.get("description") as string;
-    const amount = parseFloat(formData.get("amount") as string);
-    const category = formData.get("category") as string;
-
-    await db.expense.update({
-      where: { id },
-      data: { description, amount, category },
+    const result = await service.update(id, {
+      description: formData.get("description") as string,
+      amount: parseFloat(formData.get("amount") as string) || 0,
+      category: formData.get("category") as string,
     });
+
+    if (!result) return { error: "Gasto no encontrado" };
 
     revalidatePath("/dashboard/expenses");
     return { success: true };
@@ -79,11 +80,11 @@ export async function updateExpense(id: string, formData: FormData) {
 
 export async function deleteExpense(id: string) {
   try {
-    await getAuthData();
+    const { businessId } = await getAuthData();
+    const service = new ExpenseService(businessId);
 
-    await db.expense.delete({
-      where: { id },
-    });
+    const result = await service.delete(id);
+    if (!result) return { error: "Gasto no encontrado" };
 
     revalidatePath("/dashboard/expenses");
     return { success: true };
@@ -95,18 +96,6 @@ export async function deleteExpense(id: string) {
 
 export async function getExpensesByMonth(month: number, year: number) {
   const { businessId } = await getAuthData();
-
-  const startDate = new Date(year, month - 1, 1);
-  const endDate = new Date(year, month, 0, 23, 59, 59);
-
-  return db.expense.findMany({
-    where: {
-      businessId,
-      createdAt: {
-        gte: startDate,
-        lte: endDate,
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+  const service = new ExpenseService(businessId);
+  return service.getByMonth(month, year);
 }

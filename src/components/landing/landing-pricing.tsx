@@ -17,7 +17,7 @@ export function LandingPricing() {
             <p className="text-xs font-bold uppercase tracking-[0.1em] text-[#2d5a4c]">
               Inversión inteligente
             </p>
-            <h2 className="mt-4 text-[clamp(1.75rem,4vw,2.75rem)] font-bold leading-[1.1] tracking-[-0.02em] text-[#1b1c1a]">
+            <h2 className="font-display mt-4 text-[clamp(1.75rem,4vw,2.75rem)] font-bold leading-[1.1] tracking-[-0.02em] text-[#1b1c1a]">
               Una inversión que
               <br />
               <span className="text-gradient-organic">se paga sola</span>
@@ -30,31 +30,36 @@ export function LandingPricing() {
         </ScrollReveal>
 
         {/* Toggle Mensual / Anual */}
-        <div className="mt-10 flex items-center justify-center">
-          <div className="inline-flex items-center rounded-full border border-[#e3e2df] bg-white p-1 shadow-sm">
+        <div className="mt-10 flex items-center justify-center gap-3">
+          <div className="relative flex items-center rounded-full border border-[#e3e2df] bg-white p-1 shadow-sm">
+            <div
+              className={`absolute left-1 top-1 h-[calc(100%-8px)] w-[calc(50%-4px)] rounded-full bg-[#134235] shadow-sm transition-transform duration-300 ease-out ${
+                annual ? "translate-x-full" : "translate-x-0"
+              }`}
+            />
             <button
+              type="button"
               onClick={() => setAnnual(false)}
-              className={`rounded-full px-5 py-2 text-sm font-semibold transition-all ${
-                !annual
-                  ? "bg-[#134235] text-white shadow-sm"
-                  : "text-[#717975] hover:text-[#1b1c1a]"
+              aria-pressed={!annual}
+              className={`relative z-10 rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#134235] focus-visible:ring-offset-2 ${
+                !annual ? "text-white" : "text-[#717975] hover:text-[#1b1c1a]"
               }`}
             >
               Mensual
             </button>
             <button
+              type="button"
               onClick={() => setAnnual(true)}
-              className={`rounded-full px-5 py-2 text-sm font-semibold transition-all ${
-                annual
-                  ? "bg-[#134235] text-white shadow-sm"
-                  : "text-[#717975] hover:text-[#1b1c1a]"
+              aria-pressed={annual}
+              className={`relative z-10 rounded-full px-5 py-2 text-sm font-semibold transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#134235] focus-visible:ring-offset-2 ${
+                annual ? "text-white" : "text-[#717975] hover:text-[#1b1c1a]"
               }`}
             >
               Anual
             </button>
           </div>
           {annual && (
-            <span className="ml-3 text-xs font-semibold text-[#2d5a4c]">
+            <span className="text-xs font-semibold text-[#2d5a4c]">
               Ahorra hasta 2 meses
             </span>
           )}
@@ -64,10 +69,10 @@ export function LandingPricing() {
           {PLANS.map((plan, i) => (
             <ScrollReveal key={plan.id} from="up" delay={i * 0.08} distance={32} scrub>
               <article
-                className={`group relative flex flex-col rounded-[20px] p-6 transition-all duration-500 md:p-8 ${
+                className={`group relative flex cursor-pointer flex-col rounded-[20px] p-6 transition-all duration-500 md:p-8 ${
                   plan.highlighted
                     ? "border-2 border-[#134235] bg-[#134235] text-white shadow-xl"
-                    : "border border-[#e3e2df] bg-white text-[#1b1c1a] hover:-translate-y-1 hover:shadow-xl"
+                    : "border border-white/50 bg-white/60 text-[#1b1c1a] shadow-lg shadow-black/[0.02] backdrop-blur-2xl hover:-translate-y-1 hover:border-[#134235]/20 hover:bg-white/90 hover:shadow-xl"
                 }`}
               >
                 {"badge" in plan && plan.badge && (
@@ -122,14 +127,14 @@ export function LandingPricing() {
                 {"contact" in plan && plan.contact ? (
                   <a
                     href="mailto:soporte@zenitherp.com"
-                    className="block rounded-full border border-[#134235] py-3 text-center text-sm font-medium text-[#134235] backdrop-blur-xl transition-all hover:bg-[#134235]/5"
+                    className="block rounded-full border border-[#134235] py-3 text-center text-sm font-medium text-[#134235] backdrop-blur-xl transition-all hover:bg-[#134235]/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#134235] focus-visible:ring-offset-2"
                   >
                     {plan.cta}
                   </a>
                 ) : (
                   <Link
                     href={`/register?plan=${plan.id}&interval=${annual ? "annual" : "month"}`}
-                    className={`block rounded-full py-3 text-center text-sm font-semibold transition-all duration-300 hover:scale-[1.02] ${
+                    className={`block rounded-full py-3 text-center text-sm font-semibold transition-all duration-300 hover:scale-[1.02] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#134235] focus-visible:ring-offset-2 ${
                       plan.highlighted
                         ? "bg-white text-[#134235] hover:shadow-xl"
                         : "bg-[#134235]/90 text-white backdrop-blur-xl hover:bg-[#134235] hover:shadow-xl"

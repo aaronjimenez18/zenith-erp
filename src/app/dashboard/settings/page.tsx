@@ -4,9 +4,12 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Building2, Percent, Save, RotateCcw, CreditCard, User, Users, Trash2, AlertTriangle, LogOut } from "lucide-react";
 import Link from "next/link";
+import { toast } from "sonner";
+import { useUser } from "@/contexts/user-context";
 
 export default function SettingsPage() {
   const router = useRouter();
+  const { user, refresh: refreshUser } = useUser();
 
   // Profile
   const [userName, setUserName] = useState("");
@@ -23,6 +26,7 @@ export default function SettingsPage() {
   const [businessSaved, setBusinessSaved] = useState(false);
 
   // Margins
+  const [marginsEnabled, setMarginsEnabled] = useState(false);
   const [profitMargin, setProfitMargin] = useState(30);
   const [wholesaleMargin, setWholesaleMargin] = useState(15);
   const [savingMargins, setSavingMargins] = useState(false);
@@ -38,26 +42,26 @@ export default function SettingsPage() {
 
   const [loading, setLoading] = useState(true);
 
+  // Fill user data from context once available
+  useEffect(() => {
+    if (user) {
+      setUserName(user.name || "");
+      setOriginalUserName(user.name || "");
+      setUserEmail(user.email || "");
+      setUserRole(user.role || "");
+      setBusinessPlan(user.plan || "BASIC");
+    }
+  }, [user]);
+
   const fetchSettings = useCallback(async (signal?: AbortSignal) => {
     try {
-      const [meRes, businessRes] = await Promise.all([
-        fetch("/api/auth/me", { signal }),
-        fetch("/api/business", { signal }),
-      ]);
-
-      if (meRes.ok) {
-        const me = await meRes.json();
-        setUserName(me.name || "");
-        setOriginalUserName(me.name || "");
-        setUserEmail(me.email || "");
-        setUserRole(me.role || "");
-      }
+      const businessRes = await fetch("/api/business", { signal });
 
       if (businessRes.ok) {
         const biz = await businessRes.json();
         setBusinessName(biz.name || "");
         setOriginalBusinessName(biz.name || "");
-        setBusinessPlan(biz.plan || "BASIC");
+        setMarginsEnabled(biz.marginsEnabled ?? false);
         setProfitMargin(biz.profitMargin ?? 30);
         setWholesaleMargin(biz.wholesaleMargin ?? 15);
       }
@@ -98,6 +102,7 @@ export default function SettingsPage() {
       if (res.ok) {
         setOriginalUserName(userName.trim());
         setProfileSaved(true);
+        refreshUser();
         setTimeout(() => setProfileSaved(false), 2000);
       }
     } catch (error) {
@@ -134,7 +139,7 @@ export default function SettingsPage() {
       const res = await fetch("/api/business", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ profitMargin, wholesaleMargin }),
+        body: JSON.stringify({ marginsEnabled, profitMargin, wholesaleMargin }),
       });
       if (res.ok) {
         setMarginsSaved(true);
@@ -162,11 +167,11 @@ export default function SettingsPage() {
         router.push("/login");
       } else {
         const err = await res.json();
-        alert(err.error || "Error al eliminar negocio");
+        toast.error("Error al eliminar negocio", { description: err.error });
       }
     } catch (error) {
       console.error("Error:", error);
-      alert("Error de servidor");
+      toast.error("Error de servidor");
     } finally {
       setDeleting(false);
     }
@@ -195,9 +200,9 @@ export default function SettingsPage() {
       </header>
 
       {/* Profile */}
-      <div className="glass-card p-5 sm:p-6 rounded-3xl">
+      <div className="glass-card p-5 sm:p-6">
         <div className="flex items-center gap-3 mb-5">
-          <div className="p-2 bg-primary/10 rounded-xl text-primary">
+          <div className="p-2 bg-[#134235]/10 rounded-xl text-[#134235]">
             <User className="w-5 h-5" />
           </div>
           <h2 className="text-lg font-bold text-slate-800">Perfil</h2>
@@ -234,7 +239,7 @@ export default function SettingsPage() {
             <p className="text-xs text-slate-400 mt-1 font-medium">El email no se puede cambiar.</p>
           </div>
           <div className="flex items-center gap-2 pt-1">
-            <span className="text-[11px] font-bold bg-white/60 text-slate-500 px-2.5 py-0.5 rounded-full border border-white/50 uppercase tracking-wider">
+            <span className="text-[11px] font-bold bg-slate-100 text-slate-500 px-2.5 py-0.5 rounded-full border border-slate-200 uppercase tracking-wider">
               {userRole}
             </span>
           </div>
@@ -242,9 +247,9 @@ export default function SettingsPage() {
       </div>
 
       {/* Business Name */}
-      <div className="glass-card p-5 sm:p-6 rounded-3xl">
+        <div className="glass-card p-5 sm:p-6">
         <div className="flex items-center gap-3 mb-5">
-          <div className="p-2 bg-primary/10 rounded-xl text-primary">
+          <div className="p-2 bg-[#134235]/10 rounded-xl text-[#134235]">
             <Building2 className="w-5 h-5" />
           </div>
           <h2 className="text-lg font-bold text-slate-800">Nombre del Negocio</h2>
@@ -269,75 +274,96 @@ export default function SettingsPage() {
       </div>
 
       {/* Margins */}
-      <div className="glass-card p-5 sm:p-6 rounded-3xl">
-        <div className="flex items-center gap-3 mb-5">
-          <div className="p-2 bg-primary/10 rounded-xl text-primary">
-            <Percent className="w-5 h-5" />
+      <div className="glass-card p-5 sm:p-6">
+        <div className="flex items-center justify-between mb-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-[#134235]/10 rounded-xl text-[#134235]">
+              <Percent className="w-5 h-5" />
+            </div>
+            <h2 className="text-lg font-bold text-slate-800">Márgenes de Ganancia</h2>
           </div>
-          <h2 className="text-lg font-bold text-slate-800">Márgenes de Ganancia</h2>
+          <button
+            onClick={() => setMarginsEnabled(!marginsEnabled)}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              marginsEnabled ? "bg-[#134235]" : "bg-slate-200"
+            }`}
+            role="switch"
+            aria-checked={marginsEnabled}
+            type="button"
+          >
+            <span
+              className={`inline-block h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                marginsEnabled ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
         </div>
         <p className="text-sm text-slate-500 mb-5">
-          Se aplicarán automáticamente al registrar nuevos productos.
+          {marginsEnabled
+            ? "Se aplicarán automáticamente al registrar nuevos productos."
+            : "Activa esta opción para calcular automáticamente precios de venta y mayoreo basados en el precio de compra."}
         </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-5">
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">
-              % Ganancia (Venta)
-            </label>
-            <div className="relative">
-              <input
-                type="number"
-                value={profitMargin}
-                onChange={(e) => setProfitMargin(parseFloat(e.target.value) || 0)}
-                min="0"
-                max="500"
-                step="0.5"
-                className="w-full p-3 glass-input rounded-xl"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">%</span>
+        <div className={`space-y-5 ${marginsEnabled ? "" : "opacity-40 pointer-events-none"}`}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">
+                % Ganancia (Venta)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={profitMargin}
+                  onChange={(e) => setProfitMargin(parseFloat(e.target.value) || 0)}
+                  min="0"
+                  max="500"
+                  step="0.5"
+                  className="w-full p-3 glass-input rounded-xl"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">%</span>
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-2">
+                % Ganancia (Mayoreo)
+              </label>
+              <div className="relative">
+                <input
+                  type="number"
+                  value={wholesaleMargin}
+                  onChange={(e) => setWholesaleMargin(parseFloat(e.target.value) || 0)}
+                  min="0"
+                  max="500"
+                  step="0.5"
+                  className="w-full p-3 glass-input rounded-xl"
+                />
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">%</span>
+              </div>
             </div>
           </div>
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">
-              % Ganancia (Mayoreo)
-            </label>
-            <div className="relative">
-              <input
-                type="number"
-                value={wholesaleMargin}
-                onChange={(e) => setWholesaleMargin(parseFloat(e.target.value) || 0)}
-                min="0"
-                max="500"
-                step="0.5"
-                className="w-full p-3 glass-input rounded-xl"
-              />
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">%</span>
-            </div>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={saveMargins}
+              disabled={savingMargins}
+              className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 disabled:opacity-50 transition-all shadow-sm"
+            >
+              <Save className="w-4 h-4" />
+              {savingMargins ? "Guardando..." : marginsSaved ? "¡Guardado!" : "Guardar"}
+            </button>
+            <button
+              onClick={resetMargins}
+              className="flex items-center gap-2 px-5 py-2.5 border border-[#e3e2df] text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all"
+            >
+              <RotateCcw className="w-4 h-4" />
+              Resetear
+            </button>
           </div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={saveMargins}
-            disabled={savingMargins}
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 disabled:opacity-50 transition-all shadow-sm"
-          >
-            <Save className="w-4 h-4" />
-            {savingMargins ? "Guardando..." : marginsSaved ? "¡Guardado!" : "Guardar"}
-          </button>
-          <button
-            onClick={resetMargins}
-            className="flex items-center gap-2 px-5 py-2.5 bg-white/40 text-slate-700 rounded-xl font-bold hover:bg-white/60 transition-all border border-white/50"
-          >
-            <RotateCcw className="w-4 h-4" />
-            Resetear
-          </button>
         </div>
       </div>
 
       {/* Plan */}
-      <div className="glass-card p-5 sm:p-6 rounded-3xl">
+      <div className="glass-card p-5 sm:p-6">
         <div className="flex items-center gap-3 mb-5">
-          <div className="p-2 bg-primary/10 rounded-xl text-primary">
+          <div className="p-2 bg-[#134235]/10 rounded-xl text-[#134235]">
             <CreditCard className="w-5 h-5" />
           </div>
           <h2 className="text-lg font-bold text-slate-800">Plan</h2>
@@ -353,7 +379,7 @@ export default function SettingsPage() {
             <span className={`inline-block px-4 py-1.5 rounded-full text-xs font-extrabold uppercase tracking-wider border shadow-sm ${
               businessPlan === "PREMIUM"
                 ? "bg-slate-800/10 text-slate-700 border-slate-300"
-                : "bg-white/40 text-slate-500 border-white/50"
+                : "bg-slate-100 text-slate-500 border-slate-200"
             }`}>
               {businessPlan}
             </span>
@@ -370,9 +396,9 @@ export default function SettingsPage() {
       </div>
 
       {/* Team */}
-      <div className="glass-card p-5 sm:p-6 rounded-3xl">
+      <div className="glass-card p-5 sm:p-6">
         <div className="flex items-center gap-3 mb-5">
-          <div className="p-2 bg-primary/10 rounded-xl text-primary">
+          <div className="p-2 bg-[#134235]/10 rounded-xl text-[#134235]">
             <Users className="w-5 h-5" />
           </div>
           <h2 className="text-lg font-bold text-slate-800">Equipo</h2>
@@ -393,9 +419,9 @@ export default function SettingsPage() {
 
       {/* Danger Zone */}
       {userRole === "SUPER_ADMIN" && (
-        <div className="glass-card p-5 sm:p-6 rounded-3xl border border-destructive/20 bg-destructive/[0.02]">
+        <div className="glass-card p-5 sm:p-6 border border-red-200 bg-red-50/30">
           <div className="flex items-center gap-3 mb-5">
-            <div className="p-2 bg-destructive/10 rounded-xl text-destructive">
+            <div className="p-2 bg-red-100 rounded-xl text-red-600">
               <AlertTriangle className="w-5 h-5" />
             </div>
             <h2 className="text-lg font-bold text-slate-800">Zona de Peligro</h2>

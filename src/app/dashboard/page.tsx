@@ -1,38 +1,44 @@
+import type { Metadata } from "next";
 import { db } from "@/lib/db";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import { redirect } from "next/navigation";
-import { TrendingUp, Package, AlertCircle, History, ShoppingCart } from "lucide-react";
-import { TrendChart } from "@/components/trend-chart";
-import { MarginSettings } from "@/components/margin-settings";
+import dynamic from "next/dynamic";
+import { env } from "@/lib/env";
+import { ProductService } from "@/lib/services/product.service";
+import { SaleService } from "@/lib/services/sale.service";
+import { ExpenseService } from "@/lib/services/expense.service";
+import { TrendingUp, TrendingDown, Minus, Package, AlertCircle, History, ShoppingCart, ArrowUpRight, ArrowDownRight } from "lucide-react";
+
+const TrendChart = dynamic(() => import("@/components/trend-chart").then((m) => ({ default: m.TrendChart })));
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  robots: { index: false, follow: false },
+};
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
-
-  // Si no hay token, al login directamente
   if (!token) redirect("/login");
 
   let businessId: string;
   let userName: string = "Usuario";
 
   try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+    const secret = new TextEncoder().encode(env.JWT_SECRET);
     const { payload } = await jwtVerify(token, secret);
     businessId = payload.businessId as string;
-
-    // Intentamos sacar el nombre, si no, el email, si no, se queda como "Usuario"
-    if (payload.name) {
-      userName = payload.name as string;
-    } else if (payload.email) {
-      userName = (payload.email as string).split("@")[0];
-    }
+    userName = (payload.name as string) || (payload.email as string)?.split("@")[0] || "Usuario";
   } catch {
     redirect("/login");
   }
 
-  // Si por alguna razón no tenemos businessId, no podemos consultar la DB
   if (!businessId) redirect("/login");
+
+  const productService = new ProductService(businessId);
+  const saleService = new SaleService(businessId);
+  const expenseService = new ExpenseService(businessId);
 
   const [
     productsCount,
@@ -43,20 +49,12 @@ export default async function DashboardPage() {
     monthlyExpenses,
   ] = await Promise.all([
     db.product.count({ where: { businessId } }),
-    db.product.findMany({
-      where: { businessId, stock: { lte: 5 } },
-      take: 5,
-      orderBy: { stock: "asc" },
-    }),
+    productService.getLowStock(5).then(p => p.slice(0, 5)),
     db.sale.aggregate({
       where: { businessId },
       _sum: { total: true },
     }),
-    db.sale.findMany({
-      where: { businessId },
-      orderBy: { createdAt: "desc" },
-      take: 5,
-    }),
+    saleService.getRecent(5),
     db.sale.findMany({
       where: { businessId },
       select: { total: true, createdAt: true },
@@ -66,6 +64,31 @@ export default async function DashboardPage() {
       select: { amount: true, createdAt: true },
     }),
   ]);
+
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+  const calcMonthTotals = (month: number, year: number) => ({
+    sales: monthlySales
+      .filter(s => new Date(s.createdAt).getMonth() === month && new Date(s.createdAt).getFullYear() === year)
+      .reduce((sum, s) => sum + (s.total || 0), 0),
+    expenses: monthlyExpenses
+      .filter(e => new Date(e.createdAt).getMonth() === month && new Date(e.createdAt).getFullYear() === year)
+      .reduce((sum, e) => sum + (e.amount || 0), 0),
+  });
+
+  const currentTotals = calcMonthTotals(currentMonth, currentYear);
+  const prevTotals = calcMonthTotals(prevMonth, prevYear);
+
+  const calcTrend = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100);
+  };
+
+  const salesTrend = calcTrend(currentTotals.sales, prevTotals.sales);
 
   const months = [
     "Ene",
@@ -130,7 +153,7 @@ export default async function DashboardPage() {
       </header>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-        <div className="glass-card p-5 sm:p-6 rounded-[22px] relative overflow-hidden">
+        <div className="glass-card p-5 sm:p-6">
           <div className="flex justify-between items-start mb-3 sm:mb-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500/80">
@@ -143,16 +166,22 @@ export default async function DashboardPage() {
                 })}
               </p>
             </div>
-            <div className="p-2.5 sm:p-3 bg-primary/10 rounded-2xl backdrop-blur-sm text-primary border border-primary/20 shadow-sm">
+            <div className="p-2.5 sm:p-3 bg-[#134235]/10 rounded-2xl text-[#134235] shadow-sm">
               <TrendingUp size={20} />
             </div>
           </div>
-          <p className="text-xs font-medium text-slate-400">
-            Acumulado histórico
-          </p>
+          <div className="flex items-center gap-1.5">
+            <span className={`inline-flex items-center gap-0.5 text-xs font-bold ${
+              salesTrend > 0 ? "text-green-600" : salesTrend < 0 ? "text-red-600" : "text-slate-400"
+            }`}>
+              {salesTrend > 0 ? <ArrowUpRight className="size-3" /> : salesTrend < 0 ? <ArrowDownRight className="size-3" /> : <Minus className="size-3" />}
+              {salesTrend > 0 ? "+" : ""}{salesTrend}%
+            </span>
+            <span className="text-xs font-medium text-slate-400">vs mes anterior</span>
+          </div>
         </div>
 
-        <div className="glass-card p-5 sm:p-6 rounded-[22px] relative overflow-hidden">
+        <div className="glass-card p-5 sm:p-6">
           <div className="flex justify-between items-start mb-3 sm:mb-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500/80">
@@ -160,14 +189,14 @@ export default async function DashboardPage() {
               </p>
               <p className="text-3xl sm:text-4xl font-extrabold text-slate-800 mt-2 tabular-nums">{productsCount}</p>
             </div>
-            <div className="p-2.5 sm:p-3 bg-primary/10 rounded-2xl backdrop-blur-sm text-primary border border-primary/20 shadow-sm">
+            <div className="p-2.5 sm:p-3 bg-[#134235]/10 rounded-2xl text-[#134235] shadow-sm">
               <Package size={20} />
             </div>
           </div>
           <p className="text-xs font-medium text-slate-400">Items registrados</p>
         </div>
 
-        <div className="glass-card p-5 sm:p-6 rounded-[22px] relative overflow-hidden sm:col-span-2 md:col-span-1">
+        <div className="glass-card p-5 sm:p-6 sm:col-span-2 md:col-span-1">
           <div className="flex justify-between items-start mb-3 sm:mb-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500/80">
@@ -178,7 +207,7 @@ export default async function DashboardPage() {
                 <span className="text-base sm:text-lg font-medium text-slate-400">Críticos</span>
               </p>
             </div>
-            <div className="p-2.5 sm:p-3 bg-destructive/10 rounded-2xl backdrop-blur-sm text-destructive border border-destructive/20 shadow-sm">
+            <div className="p-2.5 sm:p-3 bg-red-50 rounded-2xl text-red-600 shadow-sm">
               <AlertCircle size={20} />
             </div>
           </div>
@@ -188,12 +217,10 @@ export default async function DashboardPage() {
 
       <TrendChart data={chartData} />
 
-      <MarginSettings />
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-8">
         {/* Inventario en Riesgo */}
-        <div className="glass-card rounded-3xl overflow-x-auto">
-          <div className="p-4 sm:p-6 border-b border-white/40 bg-white/15">
+        <div className="glass-card overflow-x-auto">
+          <div className="p-4 sm:p-6 border-b border-[#e3e2df]">
             <h2 className="text-base sm:text-lg font-semibold text-slate-800">
               Inventario en Riesgo
             </h2>
@@ -208,7 +235,7 @@ export default async function DashboardPage() {
                 {lowStockProducts.map((p, i) => (
                   <div
                     key={p.id}
-                    className="flex justify-between items-center py-3 sm:py-3.5 border-b border-white/40 last:border-0"
+                    className="flex justify-between items-center py-3 sm:py-3.5 border-b border-[#e3e2df] last:border-0"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="w-5 text-xs font-bold text-slate-400 tabular-nums">
@@ -216,7 +243,7 @@ export default async function DashboardPage() {
                       </span>
                       <span className="font-semibold text-slate-700 truncate">{p.name}</span>
                     </div>
-                    <span className="px-3 py-1 bg-white/40 backdrop-blur-sm text-destructive rounded-full text-xs font-extrabold border border-white/40 shrink-0 tabular-nums">
+                    <span className="px-3 py-1 bg-red-50 text-red-600 rounded-full text-xs font-extrabold shrink-0 tabular-nums">
                       {p.stock} uds.
                     </span>
                   </div>
@@ -227,9 +254,9 @@ export default async function DashboardPage() {
         </div>
 
         {/* Últimos Movimientos - timeline style */}
-        <div className="glass-card rounded-3xl overflow-x-auto">
-          <div className="p-4 sm:p-6 border-b border-white/40 bg-white/15 flex items-center gap-3">
-            <div className="p-1.5 sm:p-2 bg-primary/10 rounded-xl text-primary">
+        <div className="glass-card overflow-x-auto">
+          <div className="p-4 sm:p-6 border-b border-[#e3e2df] flex items-center gap-3">
+            <div className="p-1.5 sm:p-2 bg-[#134235]/10 rounded-xl text-[#134235]">
               <History size={16} />
             </div>
             <h2 className="text-base sm:text-lg font-semibold text-slate-800">
@@ -241,10 +268,10 @@ export default async function DashboardPage() {
               {recentSales.map((s) => (
                   <div
                     key={s.id}
-                    className="flex justify-between items-center py-3 sm:py-3.5 border-b border-white/40 last:border-0"
+                    className="flex justify-between items-center py-3 sm:py-3.5 border-b border-[#e3e2df] last:border-0"
                   >
                   <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-white/40 backdrop-blur-md border border-white/50 flex items-center justify-center text-slate-500 shadow-sm shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center text-slate-500 shrink-0">
                       <ShoppingCart size={16} />
                     </div>
                     <div className="min-w-0">
@@ -259,7 +286,7 @@ export default async function DashboardPage() {
                       </p>
                     </div>
                   </div>
-                  <span className="text-sm font-extrabold text-slate-700 bg-white/40 backdrop-blur-sm px-3 py-1 rounded-xl border border-white/40 shrink-0 tabular-nums">
+                  <span className="text-sm font-extrabold text-slate-700 bg-slate-100 px-3 py-1 rounded-xl shrink-0 tabular-nums">
                     +$
                     {(s.total || 0).toLocaleString("es-MX", {
                       minimumFractionDigits: 2,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { Receipt } from "lucide-react";
 import ExpenseForm from "../../../components/expense-form";
 import { deleteExpense, seedDefaultExpenses } from "./actions";
 import { EXPENSE_CATEGORIES } from "./constants";
@@ -22,44 +23,47 @@ export default function ExpensesPage() {
   const [totalGastos, setTotalGastos] = useState(0);
   const [seedAttempted, setSeedAttempted] = useState(false);
 
-  const fetchExpenses = useCallback(async (signal?: AbortSignal) => {
-    try {
-      const res = await fetch("/api/expenses", { signal });
-      if (res.ok) {
-        const data = await res.json();
+  const fetchExpenses = useCallback(
+    async (signal?: AbortSignal) => {
+      try {
+        const res = await fetch("/api/expenses", { signal });
+        if (res.ok) {
+          const data = await res.json();
 
-        if (data.length === 0 && !seedAttempted) {
-          setSeedAttempted(true);
-          const seedResult = await seedDefaultExpenses();
-          if (seedResult?.success) {
-            const updatedRes = await fetch("/api/expenses", { signal });
-            if (updatedRes.ok) {
-              const updatedData = await updatedRes.json();
-              setExpenses(updatedData);
-              const updatedTotal = updatedData.reduce(
-                (acc: number, exp: Expense) => acc + exp.amount,
-                0,
-              );
-              setTotalGastos(updatedTotal);
-              return;
+          if (data.length === 0 && !seedAttempted) {
+            setSeedAttempted(true);
+            const seedResult = await seedDefaultExpenses();
+            if (seedResult?.success) {
+              const updatedRes = await fetch("/api/expenses", { signal });
+              if (updatedRes.ok) {
+                const updatedData = await updatedRes.json();
+                setExpenses(updatedData);
+                const updatedTotal = updatedData.reduce(
+                  (acc: number, exp: Expense) => acc + exp.amount,
+                  0,
+                );
+                setTotalGastos(updatedTotal);
+                return;
+              }
             }
           }
-        }
 
-        setExpenses(data);
-        const total = data.reduce(
-          (acc: number, exp: Expense) => acc + exp.amount,
-          0,
-        );
-        setTotalGastos(total);
+          setExpenses(data);
+          const total = data.reduce(
+            (acc: number, exp: Expense) => acc + exp.amount,
+            0,
+          );
+          setTotalGastos(total);
+        }
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        console.error("Error fetching expenses:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      if (err instanceof DOMException && err.name === "AbortError") return;
-      console.error("Error fetching expenses:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [seedAttempted]);
+    },
+    [seedAttempted],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -138,16 +142,18 @@ export default function ExpensesPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="glass-card p-6 rounded-3xl relative overflow-hidden bg-white/40 border-white/50">
+        <div className="glass-card p-6">
           <p className="text-sm font-bold text-slate-500/80 uppercase tracking-wider">
             Total Gastos
           </p>
-              <p className="text-3xl font-extrabold text-slate-800 mt-2 tabular-nums">
-                ${totalGastos.toFixed(2)}
-              </p>
+          <p className="text-3xl font-extrabold text-slate-800 mt-2 tabular-nums">
+            ${totalGastos.toFixed(2)}
+          </p>
         </div>
-        <div className="glass-card p-6 rounded-3xl relative overflow-hidden bg-white/40 border-white/50">
-          <p className="text-sm font-bold text-slate-500/80 uppercase tracking-wider">Este Mes</p>
+        <div className="glass-card p-6">
+          <p className="text-sm font-bold text-slate-500/80 uppercase tracking-wider">
+            Este Mes
+          </p>
           <p className="text-3xl font-extrabold text-slate-800 mt-2">
             $
             {expenses
@@ -163,8 +169,10 @@ export default function ExpensesPage() {
               .toFixed(2)}
           </p>
         </div>
-        <div className="glass-card p-6 rounded-3xl relative overflow-hidden bg-white/40 border-white/50">
-          <p className="text-sm font-bold text-slate-500/80 uppercase tracking-wider">Categorías</p>
+        <div className="glass-card p-6">
+          <p className="text-sm font-bold text-slate-500/80 uppercase tracking-wider">
+            Categorías
+          </p>
           <p className="text-3xl font-extrabold text-slate-800 mt-2">
             {new Set(expenses.map((e) => e.category)).size}
           </p>
@@ -177,7 +185,7 @@ export default function ExpensesPage() {
           className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all shadow-sm ${
             filter === "all"
               ? "bg-slate-800 text-white shadow-sm"
-              : "bg-white/40 border border-white/50 text-slate-600 backdrop-blur-sm hover:bg-white/60"
+              : "bg-white border border-[#e3e2df] text-slate-600 hover:bg-slate-50 hover:border-slate-300"
           }`}
         >
           Todos
@@ -186,37 +194,49 @@ export default function ExpensesPage() {
           <button
             key={cat}
             onClick={() => setFilter(cat)}
-              className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all shadow-sm ${
-                filter === cat
-                  ? "bg-slate-800 text-white shadow-sm"
-                  : "bg-white/40 border border-white/50 text-slate-600 backdrop-blur-sm hover:bg-white/60"
-              }`}
+            className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all shadow-sm ${
+              filter === cat
+                ? "bg-slate-800 text-white shadow-sm"
+                : "bg-white border border-[#e3e2df] text-slate-600 hover:bg-slate-50 hover:border-slate-300"
+            }`}
           >
             {cat}
           </button>
         ))}
       </div>
-      <div className="glass-card rounded-3xl overflow-x-auto">
-        <table className="min-w-full divide-y divide-white/20">
-          <thead className="bg-white/30 backdrop-blur-md text-slate-600 text-xs uppercase font-extrabold">
+      <div className="glass-card overflow-x-auto">
+        <table className="min-w-full divide-y divide-[#e3e2df]">
+          <thead className="bg-slate-50 text-slate-600 text-xs uppercase font-extrabold">
             <tr>
-              <th className="px-3 md:px-6 py-4 text-left tracking-wider">Fecha</th>
-              <th className="px-3 md:px-6 py-4 text-left tracking-wider">Categoría</th>
-              <th className="px-3 md:px-6 py-4 text-left tracking-wider">Descripción</th>
-              <th className="px-3 md:px-6 py-4 text-right tracking-wider">Monto</th>
-              <th className="px-3 md:px-6 py-4 text-center tracking-wider">Acciones</th>
+              <th className="px-3 md:px-6 py-4 text-left tracking-wider">
+                Fecha
+              </th>
+              <th className="px-3 md:px-6 py-4 text-left tracking-wider">
+                Categoría
+              </th>
+              <th className="px-3 md:px-6 py-4 text-left tracking-wider">
+                Descripción
+              </th>
+              <th className="px-3 md:px-6 py-4 text-right tracking-wider">
+                Monto
+              </th>
+              <th className="px-3 md:px-6 py-4 text-center tracking-wider">
+                Acciones
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-white/20 bg-transparent">
+          <tbody className="divide-y divide-[#e3e2df]">
             {filteredExpenses.length === 0 ? (
               <tr>
                 <td
                   colSpan={5}
                   className="px-6 py-12 text-center text-slate-500 font-medium"
                 >
-                  <div className="flex flex-col items-center">
-                    <p>No hay gastos registrados aún.</p>
-                    <p className="text-sm opacity-80 mt-1">
+                  <div className="flex flex-col items-center gap-2">
+                    <p className="font-semibold">
+                      No hay gastos registrados aún.
+                    </p>
+                    <p className="text-sm opacity-80">
                       Haz clic en &quot;+ Nuevo Gasto&quot; para comenzar.
                     </p>
                   </div>
@@ -226,14 +246,14 @@ export default function ExpensesPage() {
               filteredExpenses.map((expense) => (
                 <tr
                   key={expense.id}
-                  className="hover:bg-white/40 transition-colors"
+                  className="hover:bg-slate-50 transition-colors"
                 >
                   <td className="px-3 md:px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-500">
                     {formatDate(expense.createdAt)}
                   </td>
                   <td className="px-3 md:px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold border border-white/40 shadow-sm ${getCategoryColor(expense.category)}`}
+                      className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${getCategoryColor(expense.category)}`}
                     >
                       {expense.category}
                     </span>

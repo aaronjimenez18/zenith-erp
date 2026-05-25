@@ -148,13 +148,16 @@
   }
 }
 
-/* Glassmorphism Utilities */
+/* Card & Surface Utilities */
 @layer utilities {
   .glass-card {
-    @apply bg-card border border-white/30 dark:border-white/10;
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
-    box-shadow: 0 10px 40px rgba(0,0,0,0.04), 0 2px 10px rgba(0,0,0,0.02);
+    @apply bg-white dark:bg-[#1c1c1c] rounded-3xl border border-[#e3e2df] dark:border-[#333];
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.08);
+  }
+
+  .dark .glass-card {
+    @apply border-[#333] bg-[#1c1c1c];
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 1px 3px rgba(0,0,0,0.3);
   }
 
   .glass-modal {
@@ -165,15 +168,12 @@
   }
 
   .glass-sidebar {
-    @apply bg-sidebar border-r border-white/20 dark:border-white/10;
-    backdrop-filter: blur(40px);
-    -webkit-backdrop-filter: blur(40px);
+    @apply bg-white dark:bg-[#161616] border-r border-[#e3e2df] dark:border-[#2a2a2a];
   }
   
   .glass-input {
-    @apply bg-white/25 dark:bg-black/25 border border-white/30 dark:border-white/10 focus:ring-2 focus:ring-black/20 focus:bg-white/50 outline-none transition-all;
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
+    @apply bg-white dark:bg-[#252525] border border-[#e3e2df] dark:border-[#333] focus:ring-2 focus:ring-[#134235]/30 focus:border-[#134235]/50 outline-none transition-all rounded-xl;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.02);
   }
 
   .float-shadow {
@@ -181,26 +181,17 @@
   }
 
   .dashboard-bg {
-    background: linear-gradient(160deg, 
-      #e8e5e0 0%, 
-      #ddd9d2 30%,
-      #e6e3de 60%,
-      #f5f3f0 100%
-    );
+    background-color: #f6f5f3;
     min-height: 100vh;
   }
   
   .dark .dashboard-bg {
-    background: linear-gradient(160deg, 
-      #1a1a1a 0%, 
-      #232323 30%,
-      #1e1e1e 60%,
-      #171717 100%
-    );
+    background-color: #141414;
+    min-height: 100vh;
   }
 
   .font-display {
-    font-family: var(--font-display), "Newsreader", ui-serif, Georgia, serif;
+    font-family: var(--font-display), "Outfit", ui-sans-serif, system-ui, sans-serif;
   }
 
 }

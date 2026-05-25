@@ -21,6 +21,7 @@ model Business {
   id                  String         @id @default(cuid())
   name                String
   plan                Plan           @default(BASIC)
+  marginsEnabled      Boolean        @default(false)
   profitMargin        Float          @default(30)
   wholesaleMargin     Float          @default(15)
   stripeCustomerId    String?        @unique

@@ -1,10 +1,16 @@
+import type { Metadata } from "next";
 import { db } from "@/lib/db";
-import { Product } from "@prisma/client";
-import ProductForm from "../../../components/product-form";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import { redirect } from "next/navigation";
+import type { Product } from "@prisma/client";
+import ProductForm from "@/components/product-form";
 import { InventoryTable } from "./components/inventory-table";
+
+export const metadata: Metadata = {
+  title: "Inventario",
+  robots: { index: false, follow: false },
+};
 
 export default async function InventoryPage() {
   const cookieStore = await cookies();
@@ -36,7 +42,7 @@ export default async function InventoryPage() {
 
   return (
     <div className="p-4 md:p-8 pt-20 md:pt-8 relative z-10">
-      <div className="flex justify-between items-center mb-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
         <div>
           <h1 className="text-3xl font-extrabold tracking-tight text-slate-800">
             Inventario

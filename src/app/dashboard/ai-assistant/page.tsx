@@ -106,7 +106,7 @@ export default function AIAssistantPage() {
         )}
         
         <div className="flex-1 flex flex-col relative z-10 pt-16 md:pt-0">
-          <header className="flex items-center justify-between px-4 md:px-8 py-4 bg-white/30 backdrop-blur-xl border-b border-white/40 sticky top-0 z-10 hidden md:flex">
+          <header className="flex items-center justify-between px-4 md:px-8 py-4 border-b border-[#e3e2df] bg-white sticky top-0 z-10 hidden md:flex">
             <div>
               <h1 className="text-slate-800 text-xl font-extrabold">Asistente IA</h1>
             </div>
@@ -127,7 +127,7 @@ export default function AIAssistantPage() {
                     <button
                       key={i}
                       onClick={() => sendMessage(s.text)}
-                      className="flex items-center gap-4 p-5 rounded-3xl glass-card border border-white/50 hover:bg-white/60 transition-all group text-left"
+                      className="flex items-center gap-4 p-5 rounded-3xl border border-[#e3e2df] bg-white hover:bg-slate-50 hover:shadow-sm transition-all group text-left"
                     >
                       <div className={`w-10 h-10 rounded-xl ${s.bg} flex-shrink-0 flex items-center justify-center group-hover:scale-105 transition-transform`}>
                         <s.icon className={`w-5 h-5 ${s.color}`} />
@@ -141,17 +141,17 @@ export default function AIAssistantPage() {
               <div className="max-w-4xl mx-auto w-full p-6 space-y-8">
                 {messages.map((msg, i) => (
                   <div key={i} className={`flex items-start gap-4 ${msg.role === "user" ? "flex-row-reverse" : ""}`}>
-                    <div className={`w-10 h-10 rounded-2xl flex-shrink-0 flex items-center justify-center shadow-sm backdrop-blur-sm border ${
-                      msg.role === "user" ? "bg-white/60 border-white/50" : "bg-slate-700 border-white/20"
+                    <div className={`w-10 h-10 rounded-2xl flex-shrink-0 flex items-center justify-center shadow-sm ${
+                      msg.role === "user" ? "bg-slate-100" : "bg-slate-700"
                     }`}>
                       {msg.role === "user" ? <User className="w-5 h-5 text-slate-700" /> : <Bot className="w-5 h-5 text-white" />}
                     </div>
                     
                     <div className={`group relative max-w-[85%] ${msg.role === "user" ? "text-right" : ""}`}>
-                        <div className={`inline-block px-5 py-4 rounded-3xl text-[15px] font-medium leading-relaxed float-shadow ${
+                        <div className={`inline-block px-5 py-4 rounded-3xl text-[15px] font-medium leading-relaxed ${
                         msg.role === "user" 
-                            ? "glass-card border-0 text-slate-800 rounded-tr-none" 
-                            : "bg-white/60 backdrop-blur-md shadow-sm border border-white/50 text-slate-800 rounded-tl-none"
+                            ? "bg-[#134235] text-white rounded-tr-none shadow-sm" 
+                            : "bg-white border border-[#e3e2df] text-slate-800 rounded-tl-none shadow-sm"
                         }`}>
                         {msg.content}
                         
@@ -165,7 +165,7 @@ export default function AIAssistantPage() {
                     <div className="w-10 h-10 rounded-2xl bg-slate-700 flex items-center justify-center shadow-sm">
                       <Bot className="w-5 h-5 text-white animate-pulse" />
                     </div>
-                    <div className="bg-white/60 backdrop-blur-md border border-white/50 px-6 py-5 rounded-3xl rounded-tl-none shadow-sm">
+                    <div className="bg-white border border-[#e3e2df] px-6 py-5 rounded-3xl rounded-tl-none shadow-sm">
                       <div className="flex gap-1.5">
                         <div className="w-2 h-2 bg-slate-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
                         <div className="w-2 h-2 bg-slate-500 rounded-full animate-bounce [animation-delay:-0.15s]" />
@@ -180,7 +180,7 @@ export default function AIAssistantPage() {
           </main>
 
           {/* INPUT */}
-          <footer className="p-4 md:p-6 bg-white/30 backdrop-blur-xl border-t border-white/40">
+          <footer className="p-4 md:p-6 bg-white border-t border-[#e3e2df]">
             <div className="max-w-4xl mx-auto relative">
               <div className="flex items-center gap-3 glass-input rounded-3xl p-1.5 pl-6 focus-within:bg-white/60 transition-all shadow-sm">
                 <input

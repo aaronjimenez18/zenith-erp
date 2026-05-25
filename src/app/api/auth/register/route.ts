@@ -3,14 +3,25 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { stripe } from "@/lib/stripe";
 import { getOrCreatePriceIds } from "@/lib/stripe-products";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "unknown";
     const body = await req.json();
     const { businessName, name, email, password, plan, interval } = body;
 
+    const ipLimit = rateLimit({ key: `register:${ip}`, limit: 3, windowMs: 3600000 });
+    if (!ipLimit.allowed) {
+      return NextResponse.json({ error: "Demasiadas cuentas desde esta IP. Intenta más tarde." }, { status: 429 });
+    }
+
     if (!email || !password || !name || !businessName) {
       return NextResponse.json({ error: "Faltan campos" }, { status: 400 });
+    }
+
+    if (typeof password !== "string" || password.length < 8) {
+      return NextResponse.json({ error: "La contraseña debe tener al menos 8 caracteres" }, { status: 400 });
     }
 
     const normalizedEmail = email.toLowerCase();

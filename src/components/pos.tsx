@@ -4,6 +4,8 @@ import { useState, useMemo } from "react";
 import { Product } from "@prisma/client";
 import { createSale } from "@/app/dashboard/inventory/actions";
 import { Search, X } from "lucide-react";
+import { toast } from "sonner";
+import { useDebounce } from "@/hooks/use-debounce";
 
 interface CartItem extends Product {
   quantity: number;
@@ -12,7 +14,8 @@ interface CartItem extends Product {
 export default function POS({ products }: { products: Product[] }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const searchTerm = useDebounce(searchInput, 250);
 
   const filteredProducts = useMemo(() => {
     if (!searchTerm) return products;
@@ -25,13 +28,16 @@ export default function POS({ products }: { products: Product[] }) {
   }, [products, searchTerm]);
 
   const addToCart = (product: Product) => {
-    if (product.stock <= 0) return alert("Este producto no tiene existencias.");
+    if (product.stock <= 0) {
+      toast.error("Producto agotado", { description: "Este producto no tiene existencias." });
+      return;
+    }
 
     setCart((prev) => {
       const existing = prev.find((item) => item.id === product.id);
       if (existing) {
         if (existing.quantity >= product.stock) {
-          alert("Stock insuficiente para agregar más unidades.");
+          toast.error("Stock insuficiente", { description: "No hay más unidades disponibles." });
           return prev;
         }
         return prev.map((item) =>
@@ -50,7 +56,7 @@ export default function POS({ products }: { products: Product[] }) {
       if (!product) return prev;
       if (quantity < 1) return prev.filter((item) => item.id !== id);
       if (quantity > product.stock) {
-        alert("Stock insuficiente para esa cantidad.");
+        toast.error("Stock insuficiente", { description: `Solo hay ${product.stock} unidades disponibles.` });
         return prev;
       }
       return prev.map((item) =>
@@ -78,19 +84,19 @@ export default function POS({ products }: { products: Product[] }) {
     const res = await createSale(items);
 
     if (res?.success) {
-      alert("Venta registrada. El stock se ha actualizado.");
+      toast.success("Venta registrada", { description: "El stock se ha actualizado." });
       setCart([]);
     } else {
-      alert(res?.error || "No se pudo completar la venta. Verifica el stock e intenta de nuevo.");
+      toast.error("Error al procesar la venta", { description: res?.error || "Verifica el stock e intenta de nuevo." });
     }
     setLoading(false);
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
       {/* Zona de Productos */}
       <div className="md:col-span-2 flex flex-col gap-4">
-        <div className="glass-card p-4 rounded-2xl">
+        <div className="p-4 rounded-2xl border border-[#e3e2df] bg-white">
           <div className="flex gap-4 items-center">
             <h2 className="text-lg font-semibold text-slate-800 shrink-0">Productos</h2>
             <div className="relative flex-1 max-w-md">
@@ -98,13 +104,13 @@ export default function POS({ products }: { products: Product[] }) {
               <input
                 type="text"
                 placeholder="Buscar por nombre o SKU..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
                 className="w-full pl-10 pr-10 py-2 glass-input rounded-xl text-sm"
               />
-              {searchTerm && (
+              {searchInput && (
                 <button
-                  onClick={() => setSearchTerm("")}
+                  onClick={() => setSearchInput("")}
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
                   aria-label="Limpiar búsqueda"
                 >
@@ -122,11 +128,14 @@ export default function POS({ products }: { products: Product[] }) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {filteredProducts.map((product) => (
-              <div
-                key={product.id}
-                onClick={() => addToCart(product)}
-                className="p-4 rounded-2xl glass-card cursor-pointer hover:bg-white/40 transition-all active:scale-[0.98]"
-              >
+      <div
+        key={product.id}
+        role="button"
+        tabIndex={0}
+        onClick={() => addToCart(product)}
+        onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); addToCart(product); } }}
+        className="p-4 rounded-2xl border border-[#e3e2df] bg-white cursor-pointer hover:bg-slate-50 hover:shadow-sm transition-all active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      >
                 <h3 className="font-semibold text-slate-800">{product.name}</h3>
                 <p className="text-sm text-slate-500 font-mono mt-0.5">{product.sku}</p>
                 <div className="flex justify-between items-center mt-3">
@@ -136,8 +145,8 @@ export default function POS({ products }: { products: Product[] }) {
                   <span
                     className={`text-xs font-bold px-2.5 py-1 rounded-full ${
                       product.stock > 0
-                        ? "bg-white/40 text-slate-600 border border-white/40"
-                        : "bg-destructive/10 text-destructive border border-destructive/20"
+                    ? "bg-slate-100 text-slate-600"
+                    : "bg-red-50 text-red-600"
                     }`}
                   >
                     {product.stock > 0 ? `${product.stock} uds.` : "Agotado"}
@@ -150,13 +159,13 @@ export default function POS({ products }: { products: Product[] }) {
       </div>
 
       {/* Zona de Carrito */}
-      <div className="glass-card rounded-2xl flex flex-col sticky top-6 h-[calc(100vh-8rem)]">
-        <div className="p-5 border-b border-white/40">
+      <div className="rounded-2xl border border-[#e3e2df] bg-white flex flex-col sticky top-6 h-[calc(100vh-8rem)] shadow-sm">
+        <div className="p-5 border-b border-[#e3e2df]">
           <h2 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-            <span className="w-2 h-6 bg-primary rounded-full" />
+            <span className="w-2 h-6 bg-[#134235] rounded-full" />
             Carrito
             {cart.length > 0 && (
-              <span className="text-xs font-bold text-slate-500 ml-auto bg-white/40 px-2 py-0.5 rounded-full">
+              <span className="text-xs font-bold text-slate-500 ml-auto bg-slate-100 px-2 py-0.5 rounded-full">
                 {cart.length} {cart.length === 1 ? "item" : "items"}
               </span>
             )}
@@ -175,14 +184,14 @@ export default function POS({ products }: { products: Product[] }) {
               {cart.map((item) => (
                 <div
                   key={item.id}
-                  className="flex justify-between items-center py-2.5 border-b border-white/30 last:border-0"
+                  className="flex justify-between items-center py-2.5 border-b border-[#e3e2df] last:border-0"
                 >
                   <div className="min-w-0">
                     <p className="font-semibold text-sm text-slate-700 truncate">{item.name}</p>
                     <div className="flex items-center gap-1.5 mt-1.5">
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                        className="w-7 h-7 rounded-lg bg-white/60 border border-white/40 flex items-center justify-center text-slate-600 hover:bg-white hover:text-slate-800 transition-all text-sm leading-none font-bold"
+                        className="w-7 h-7 rounded-lg bg-slate-100 border border-[#e3e2df] flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-all text-sm leading-none font-bold"
                         aria-label={`Reducir cantidad de ${item.name}`}
                       >
                         −
@@ -196,11 +205,11 @@ export default function POS({ products }: { products: Product[] }) {
                           const val = parseInt(e.target.value, 10);
                           if (!isNaN(val)) updateQuantity(item.id, val);
                         }}
-                        className="w-14 text-center text-sm font-semibold text-slate-800 bg-white/40 border border-white/30 rounded-lg py-1 tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-14 text-center text-sm font-semibold text-slate-800 bg-white border border-[#e3e2df] rounded-lg py-1 tabular-nums [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                       <button
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="w-7 h-7 rounded-lg bg-white/60 border border-white/40 flex items-center justify-center text-slate-600 hover:bg-white hover:text-slate-800 transition-all text-sm leading-none font-bold"
+                        className="w-7 h-7 rounded-lg bg-slate-100 border border-[#e3e2df] flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-all text-sm leading-none font-bold"
                         aria-label={`Aumentar cantidad de ${item.name}`}
                       >
                         +
@@ -219,7 +228,7 @@ export default function POS({ products }: { products: Product[] }) {
               ))}
             </div>
 
-            <div className="p-5 border-t border-white/40 bg-white/10 space-y-3">
+            <div className="p-5 border-t border-[#e3e2df] bg-slate-50/50 space-y-3">
               <div className="flex justify-between items-baseline">
                 <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider">Total</span>
                 <span className="text-2xl font-extrabold text-slate-800 tabular-nums">${total.toFixed(2)}</span>

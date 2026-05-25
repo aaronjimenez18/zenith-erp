@@ -1,8 +1,16 @@
+import type { Metadata } from "next";
 import { db } from "@/lib/db";
-import POS from "@/components/pos";
+import dynamic from "next/dynamic";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
 import { redirect } from "next/navigation";
+
+const POS = dynamic(() => import("@/components/pos"));
+
+export const metadata: Metadata = {
+  title: "Punto de Venta",
+  robots: { index: false, follow: false },
+};
 
 export default async function SalesPage() {
   const cookieStore = await cookies();

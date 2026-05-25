@@ -1,56 +1,38 @@
-import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
-import { generateToken } from "@/lib/auth";
-import { db } from "@/lib/db";
+import { env } from "@/lib/env";
+import { rateLimit } from "@/lib/rate-limit";
+import { login } from "@/lib/services/auth.service";
+import { badRequest, unauthorized, serverError, tooMany } from "@/lib/api/response";
 
 export async function POST(req: Request) {
   try {
-    const { email, password } = await req.json();
+    const ip = req.headers.get("x-forwarded-for") ?? req.headers.get("x-real-ip") ?? "unknown";
+    const body = await req.json().catch(() => ({}));
 
-    const user = await db.user.findUnique({
-      where: { email },
-      include: {
-        business: {
-          select: { plan: true }
-        }
-      }
-    });
+    const ipLimit = rateLimit({ key: `login:${ip}`, limit: 20, windowMs: 60000 });
+    if (!ipLimit.allowed) return tooMany("Demasiados intentos. Intenta de nuevo en 1 minuto.");
 
-    if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 401 });
+    if (body.email) {
+      const emailLimit = rateLimit({ key: `login:${body.email}`, limit: 5, windowMs: 60000 });
+      if (!emailLimit.allowed) return tooMany("Demasiados intentos para esta cuenta.");
     }
 
-    const valid = await bcrypt.compare(password, user.password);
+    const result = await login(body);
 
-    if (!valid) {
-      return NextResponse.json({ error: "Invalid password" }, { status: 401 });
-    }
+    if (!result.success) return result.status === 401 ? unauthorized(result.error) : badRequest(result.error);
 
-   
-    const token = generateToken({
-      userId: user.id,
-      businessId: user.businessId,
-      role: user.role,
-      plan: user.business.plan,
-      name: user.name || user.email.split('@')[0], // Fallback por si no hay nombre
+    const response = new Response(JSON.stringify({ success: true }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
     });
 
-    const response = NextResponse.json({ success: true });
-
-    response.cookies.set("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production", 
-      sameSite: "strict",
-      path: "/",
-      maxAge: 60 * 60 * 24 * 7, 
-    });
+    response.headers.set(
+      "Set-Cookie",
+      `token=${result.token}; HttpOnly; Secure=${env.NODE_ENV === "production"}; SameSite=Strict; Path=/; Max-Age=${60 * 60 * 24 * 7}`
+    );
 
     return response;
   } catch (error) {
     console.error("Error en login:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    return serverError();
   }
 }

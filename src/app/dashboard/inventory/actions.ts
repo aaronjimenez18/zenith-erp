@@ -1,17 +1,18 @@
 "use server";
 
-import { db } from "@/lib/db";
 import { revalidatePath } from "next/cache";
 import { cookies } from "next/headers";
 import { jwtVerify } from "jose";
+import { env } from "@/lib/env";
+import { ProductService } from "@/lib/services/product.service";
+import { SaleService } from "@/lib/services/sale.service";
 
-// --- Función auxiliar para seguridad ---
 async function getAuthData() {
   const cookieStore = await cookies();
   const token = cookieStore.get("token")?.value;
   if (!token) throw new Error("No estás autenticado");
 
-  const secret = new TextEncoder().encode(process.env.JWT_SECRET);
+  const secret = new TextEncoder().encode(env.JWT_SECRET);
   const { payload } = await jwtVerify(token, secret);
 
   return {
@@ -20,33 +21,31 @@ async function getAuthData() {
   };
 }
 
-// --- Acción: Crear Producto ---
 export async function createProduct(formData: FormData) {
   try {
     const { businessId } = await getAuthData();
+    const service = new ProductService(businessId);
 
-    const name = formData.get("name") as string;
-    const sku = formData.get("sku") as string;
-    const price = parseFloat(formData.get("price") as string);
-    const wholesalePrice = parseFloat(formData.get("wholesalePrice") as string) || 0;
-    const purchasePrice = parseFloat(formData.get("purchasePrice") as string) || 0;
-    const stock = parseInt(formData.get("stock") as string);
-    const barcode = (formData.get("barcode") as string) || null;
-    const imageUrl = (formData.get("imageUrl") as string) || null;
-
-    await db.product.create({
-      data: { name, sku, price, wholesalePrice, purchasePrice, stock, barcode, imageUrl, businessId },
+    await service.create({
+      name: formData.get("name") as string,
+      sku: formData.get("sku") as string,
+      price: parseFloat(formData.get("price") as string) || 0,
+      wholesalePrice: parseFloat(formData.get("wholesalePrice") as string) || 0,
+      purchasePrice: parseFloat(formData.get("purchasePrice") as string) || 0,
+      stock: parseInt(formData.get("stock") as string) || 0,
+      barcode: (formData.get("barcode") as string) || undefined,
+      imageUrl: (formData.get("imageUrl") as string) || undefined,
     });
 
     revalidatePath("/dashboard/inventory");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Error al crear producto";
     console.error("Error creando producto:", error);
-    return { error: error.message || "No se pudo crear el producto" };
+    return { error: message };
   }
 }
 
-// --- Acción: Actualizar Producto ---
 export async function updateProduct(
   productId: string,
   data: {
@@ -62,105 +61,56 @@ export async function updateProduct(
 ) {
   try {
     const { businessId } = await getAuthData();
+    const service = new ProductService(businessId);
 
-    const product = await db.product.findUnique({
-      where: { id: productId },
+    const result = await service.update(productId, {
+      ...data,
+      barcode: data.barcode ?? undefined,
+      imageUrl: data.imageUrl ?? undefined,
     });
 
-    if (!product || product.businessId !== businessId) {
-      return { error: "Producto no encontrado" };
-    }
-
-    await db.product.update({
-      where: { id: productId },
-      data,
-    });
+    if (!result) return { error: "Producto no encontrado" };
 
     revalidatePath("/dashboard/inventory");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Error al actualizar producto";
     console.error("Error actualizando producto:", error);
-    return { error: error.message || "No se pudo actualizar el producto" };
+    return { error: message };
   }
 }
 
-// --- Acción: Eliminar Producto ---
 export async function deleteProduct(productId: string) {
   try {
     const { businessId } = await getAuthData();
+    const service = new ProductService(businessId);
 
-    const product = await db.product.findUnique({
-      where: { id: productId },
-    });
-
-    if (!product || product.businessId !== businessId) {
-      return { error: "Producto no encontrado" };
-    }
-
-    await db.product.delete({
-      where: { id: productId },
-    });
+    const result = await service.delete(productId);
+    if (!result) return { error: "Producto no encontrado" };
 
     revalidatePath("/dashboard/inventory");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Error al eliminar producto";
     console.error("Error eliminando producto:", error);
-    return { error: error.message || "No se pudo eliminar el producto" };
+    return { error: message };
   }
 }
 
-// --- Acción: Registrar Venta (Descuenta Stock) ---
 export async function createSale(
   items: { productId: string; quantity: number; price: number }[],
 ) {
   try {
     const { businessId } = await getAuthData();
-    const total = items.reduce(
-      (acc, item) => acc + item.price * item.quantity,
-      0,
-    );
+    const service = new SaleService(businessId);
+    await service.create({ items });
 
-    // Usamos una transacción para garantizar integridad
-    await db.$transaction(async (tx) => {
-      // 1. Crear la Venta
-      const sale = await tx.sale.create({
-        data: {
-          total,
-          businessId,
-          items: {
-            create: items.map((item) => ({
-              productId: item.productId,
-              quantity: item.quantity,
-              price: item.price,
-            })),
-          },
-        },
-      });
-
-      // 2. Descontar Stock para cada producto
-      for (const item of items) {
-        const product = await tx.product.findUnique({
-          where: { id: item.productId },
-        });
-
-        if (!product || product.stock < item.quantity) {
-          throw new Error(
-            `Stock insuficiente para el producto: ${product?.name || item.productId}`,
-          );
-        }
-
-        await tx.product.update({
-          where: { id: item.productId },
-          data: { stock: { decrement: item.quantity } },
-        });
-      }
-    });
-
-    revalidatePath("/dashboard/inventory"); // Actualiza la tabla de stock
-    revalidatePath("/dashboard/sales"); // Actualiza el historial de ventas
+    revalidatePath("/dashboard/inventory");
+    revalidatePath("/dashboard/sales");
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Error al procesar la venta";
     console.error("Error en venta:", error);
-    return { error: error.message || "Error al procesar la venta" };
+    return { error: message };
   }
 }

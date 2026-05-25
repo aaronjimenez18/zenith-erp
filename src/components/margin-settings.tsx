@@ -61,26 +61,26 @@ export function MarginSettings() {
 
   if (loading) {
     return (
-      <div className="glass-card p-6 rounded-3xl animate-pulse">
-        <div className="h-6 bg-slate-200/50 rounded-xl w-48 mb-4" />
+      <div className="glass-card p-6 animate-pulse">
+        <div className="h-6 bg-slate-200 rounded-xl w-48 mb-4" />
         <div className="space-y-3">
-          <div className="h-10 bg-slate-200/50 rounded-xl" />
-          <div className="h-10 bg-slate-200/50 rounded-xl" />
+          <div className="h-10 bg-slate-200 rounded-xl" />
+          <div className="h-10 bg-slate-200 rounded-xl" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="glass-card p-6 rounded-3xl relative overflow-hidden">
+    <div className="glass-card p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-2 h-8 bg-slate-400/40 rounded-full" />
+          <div className="w-2 h-8 bg-slate-300 rounded-full" />
           <h2 className="text-xl font-bold text-slate-800">Márgenes de Ganancia</h2>
         </div>
         <button
           onClick={() => setShow(!show)}
-          className="md:hidden p-2 hover:bg-slate-50 rounded-lg transition"
+          className="md:hidden p-2 hover:bg-slate-100 rounded-lg transition"
           aria-label="Abrir márgenes"
         >
           <Percent className="w-5 h-5 text-slate-500" />
@@ -105,7 +105,7 @@ export function MarginSettings() {
                 min="0"
                 max="500"
                 step="0.5"
-                className="w-full p-3 glass-input rounded-xl"
+                className="w-full p-3 glass-input"
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">%</span>
             </div>
@@ -123,7 +123,7 @@ export function MarginSettings() {
                 min="0"
                 max="500"
                 step="0.5"
-                className="w-full p-3 glass-input rounded-xl"
+                className="w-full p-3 glass-input"
               />
               <span className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 text-sm font-bold">%</span>
             </div>
@@ -134,14 +134,14 @@ export function MarginSettings() {
           <button
             onClick={handleSave}
             disabled={saving}
-            className="flex items-center gap-2 px-5 py-2.5 bg-primary text-primary-foreground rounded-xl font-bold hover:opacity-90 disabled:opacity-50 transition-all shadow-sm"
+            className="flex items-center gap-2 px-5 py-2.5 bg-[#134235] text-white rounded-xl font-bold hover:bg-[#2d5a4c] disabled:opacity-50 transition-all shadow-sm"
           >
             <Save className="w-4 h-4" />
             {saving ? "Guardando..." : saved ? "¡Guardado!" : "Guardar"}
           </button>
           <button
             onClick={handleReset}
-            className="flex items-center gap-2 px-5 py-2.5 bg-white/40 text-slate-700 rounded-xl font-bold hover:bg-white/60 transition-all border border-white/50"
+            className="flex items-center gap-2 px-5 py-2.5 border border-[#e3e2df] text-slate-700 rounded-xl font-bold hover:bg-slate-50 transition-all"
           >
             <RotateCcw className="w-4 h-4" />
             Resetear

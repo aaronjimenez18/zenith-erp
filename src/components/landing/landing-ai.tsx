@@ -11,12 +11,12 @@ export function LandingAi() {
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
           <ScrollReveal from="left" distance={48}>
             <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-[#c0c8c3]/50 bg-white/80 px-4 py-1.5 backdrop-blur-xl">
+              <div className="inline-flex items-center gap-2 rounded-full border border-[#c0c8c3]/40 bg-white/70 px-4 py-1.5 shadow-sm backdrop-blur-2xl">
                 <span className="text-xs font-bold uppercase tracking-[0.1em] text-[#2d5a4c]">
                   Inteligencia artificial
                 </span>
               </div>
-              <h2 className="mt-6 text-[clamp(1.75rem,4vw,2.75rem)] font-bold leading-[1.1] tracking-[-0.02em] text-[#1b1c1a]">
+              <h2 className="font-display mt-6 text-[clamp(1.75rem,4vw,2.75rem)] font-bold leading-[1.1] tracking-[-0.02em] text-[#1b1c1a]">
                 Tu socio estratégico
                 <br />
                 <span className="text-gradient-organic">disponible 24/7</span>
@@ -37,7 +37,7 @@ export function LandingAi() {
               </ul>
               <Link
                 href="/register?plan=PREMIUM"
-                className="group mt-8 inline-flex items-center gap-2 rounded-full border border-[#c0c8c3]/60 bg-white/70 px-7 py-3 text-sm font-medium text-[#404945] backdrop-blur-xl transition-all duration-300 hover:border-[#134235]/30 hover:bg-white/90 hover:text-[#134235] hover:shadow-xl"
+                className="group mt-8 inline-flex items-center gap-2 rounded-full border border-[#c0c8c3]/60 bg-white/70 px-7 py-3 text-sm font-medium text-[#404945] backdrop-blur-xl transition-all duration-300 hover:border-[#134235]/30 hover:bg-white/90 hover:text-[#134235] hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#134235] focus-visible:ring-offset-2"
               >
                 <span>Conocer más</span>
                 <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
