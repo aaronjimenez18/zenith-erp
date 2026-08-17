@@ -2,8 +2,6 @@ Zenith ERP
 
 **Sistema de gestión empresarial todo-en-uno para pequeñas y medianas empresas.**
 
-## Zenith ERP es una plataforma SaaS moderna que centraliza la administración de tu negocio: inventario, punto de venta, gastos, usuarios, facturación y análisis — todo en un solo lugar, accesible desde cualquier navegador.
-
 Módulos
 
 Inventario
@@ -27,10 +25,6 @@ Asistente conversacional impulsado por Gemini AI. Responde preguntas sobre el ne
 Configuración
 Ajustes de empresa, márgenes de ganancia automáticos (precio de venta y mayoreo basados en precio de compra), y gestión de suscripción.
 
-Suscripción
-Planes BASIC y PREMIUM con facturación mensual o anual vía Stripe. El plan PREMIUM desbloquea roles de administrador, asistente IA, funcionalidades multi-sucursal y más.
-
----
 
 Stack Tecnológico
 
@@ -49,23 +43,3 @@ Stack Tecnológico
 
 ---
 
-Licencia
-
-**Software propietario — todos los derechos reservados.**
-
-Este repositorio contiene el código fuente de Zenith ERP. No está permitido su uso, reproducción, modificación o distribución sin autorización explícita del titular.
-
----
-
-Variables de entorno requeridas
-
-| Variable                             | Descripción                    |
-| ------------------------------------ | ------------------------------ |
-| `DATABASE_URL`                       | Cadena de conexión PostgreSQL  |
-| `JWT_SECRET`                         | Secreto para firmar tokens JWT |
-| `STRIPE_SECRET_KEY`                  | Llave secreta de Stripe        |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Llave pública de Stripe        |
-| `STRIPE_WEBHOOK_SECRET`              | Secreto del webhook de Stripe  |
-| `GMAIL_USER`                         | Correo para notificaciones     |
-| `GMAIL_PASS`                         | App Password de Gmail          |
-| `GEMINI_API_KEY`                     | API key de Google Gemini       |
